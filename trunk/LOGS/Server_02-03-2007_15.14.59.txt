@@ -1,0 +1,48 @@
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Connection failed, message: socket closed (Server closed = true).
+Server is closed
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closedConnection failed, message: socket closed (Server closed = true).
+
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
+Starting server on port: 4444
+Server is closed
+Connection failed, message: socket closed (Server closed = true).
