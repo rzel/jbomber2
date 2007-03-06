@@ -182,7 +182,18 @@ public class GameComponent extends JComponent implements Runnable, KeyListener
 
         try
         {
-            InetAddress addr = InetAddress.getByName(Config.SERVER_ADDR);
+            String host;
+
+            if (args.length > 0)
+            {
+                host = args[0];
+            }
+            else
+            {
+                host = Config.SERVER_ADDR;
+            }
+
+            InetAddress addr = InetAddress.getByName(host);
             client = new DelegatorClient(addr,
                                          Config.SERVER_PORT,
                                          System.out,
