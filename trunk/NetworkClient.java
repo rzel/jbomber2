@@ -116,7 +116,7 @@ public class NetworkClient extends Thread
     {
         try
         {
-            obj_out.writeObject(command);
+            if (running) obj_out.writeObject(command);
         }
         catch (IOException ioe)
         {

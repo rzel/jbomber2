@@ -183,6 +183,7 @@ public class GameComponent extends JComponent implements Runnable, KeyListener
         try
         {
             String host;
+            String nick;
 
             if (args.length > 0)
             {
@@ -193,11 +194,20 @@ public class GameComponent extends JComponent implements Runnable, KeyListener
                 host = Config.SERVER_ADDR;
             }
 
+            if (args.length > 1)
+            {
+                nick = args[1];
+            }
+            else
+            {
+                nick = "Test";
+            }
+
             InetAddress addr = InetAddress.getByName(host);
             client = new DelegatorClient(addr,
                                          Config.SERVER_PORT,
                                          System.out,
-                                         "Test");
+                                         nick);
 
             JFrame f = new JFrame("BOMBERMAN");
             f.setSize(500,500);
