@@ -119,12 +119,15 @@ public class Server extends Thread
      *
      * @param command The command to send to all connected clients.
      */
-    public synchronized  void sendToAll(Command command)
+    public void sendToAll(Command command)
     {
         // Send to all clients
-        for (Transmitter t : clients)
+        synchronized (clients)
         {
-            t.send(command);
+            for (Transmitter t : clients)
+            {
+                t.send(command);
+            }
         }
     }
 
