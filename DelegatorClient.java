@@ -220,6 +220,7 @@ public class DelegatorClient extends Thread
      */
     public void close()
     {
+        network_client.send(new PlayerCommand(player_id, Config.ACT_LEAVE));
         network_client.close();
     }
 

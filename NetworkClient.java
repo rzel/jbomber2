@@ -80,7 +80,6 @@ public class NetworkClient extends Thread
             {
                 Command command = (Command)obj_in.readObject();
                 delegator_client.handleCommand(command);
-                writeLog("Command recieved: " + command);
             }
             catch (IOException ioe)
             {
