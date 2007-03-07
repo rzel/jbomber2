@@ -227,4 +227,9 @@ public class GameComponent extends JComponent implements Runnable, KeyListener
             System.exit(-1);
         }
     }
+
+    protected void finalize() throws Throwable
+    {
+        delegator_client.close();
+    }
 }
