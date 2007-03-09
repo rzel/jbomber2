@@ -204,6 +204,10 @@ public class Server extends Thread
                      ioe.getMessage());
         }
 
+        // Clear clients list, so no exception is thrown when
+        // t.close class removeClient
+        clients.clear();
+
         for (Transmitter t : clients)
         {
             t.close();
