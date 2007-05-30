@@ -92,6 +92,13 @@ public class Transmitter extends Thread
                 close();
             }
             catch (InterruptedException ie) {}
+
+            // Check whether socket is still connected. If this is
+            // not the case, send an error to server
+            if (!client.isBound())
+            {
+                close();
+            }
         }
     }
 
@@ -123,9 +130,6 @@ public class Transmitter extends Thread
         // Make sure all other clients now this one left
         server.recieve(new PlayerCommand(id, Config.ACT_LEAVE));
 
-        // Remove this client from the server
-        server.removeClient(this);
-
         try
         {
             client.close();
@@ -137,6 +141,9 @@ public class Transmitter extends Thread
             writeLog("Error while closing connection, message " +
                      ioe.getMessage());
         }
+
+        // Remove this client from the server
+        server.removeClient(this);
     }
 
     /**
