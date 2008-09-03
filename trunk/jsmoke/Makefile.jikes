@@ -1,0 +1,29 @@
+#VM_DEST:=-target 1.4.2
+#VM_SOURCE:=-source 1.4
+
+PPFLAGS := $(PPFLAGS) -DUSE_JAVA_142
+
+ifeq ($(RTJAR),)
+  RTJAR = $(shell ./findrtjar.sh "$(RTJARPATH)")
+endif
+
+CLASSPATH := $(CLASSPATH):$(RTJAR)
+
+JAVAC_OPTS:=$(VM_DEST) $(VM_SOURCE) -O -d $(CLASSDIR) -nowarn -classpath "$(CLASSPATH)" -sourcepath "$(SRCPATH)"
+
+#swinggui.class first class file to compile to speed up building
+CLASSFILES:=$(CLASSFILES)
+
+all: $(CLASSFILES)
+
+$(CLASSDIR)/%.class: $(SRCDIR)/%.java
+	@echo "[java -> class] $*"
+	@jikes $(JAVAC_OPTS) $< +M
+	@mkdir -p $(DEPSDIR)
+# next line from http://make.paulandlesley.org/autodep.html
+	@cp $(CLASSDIR)/smoke/$*.u $(DEPSDIR)/$*.dd; \
+	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
+	  -e '/^$$/ d' -e 's/$$/ :/' < $(DEPSDIR)/$*.dd >> $(DEPSDIR)/$*.d; \
+	  rm -f $(DEPSDIR)/$*.dd
+
+-include $(JAVAFILES:$(SRCDIR)/%.java=$(DEPSDIR)/%.d)

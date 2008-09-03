@@ -1,0 +1,17 @@
+#VM_DEST:=-target 1.4.2
+#VM_SOURCE:=-source 1.4
+
+PPFLAGS = -DUSE_JAVA_142 -DUSE_GCJ
+
+JAVAC_OPTS:=-O4 -C -d $(CLASSDIR)
+
+all: $(CLASSFILES)
+
+binary: smoke
+
+smoke:
+	gcj -g -O4 *.java --main=swinggui -o jgbe
+
+$(CLASSDIR)/%.class: %.java
+	@echo "[java -> class] $*"
+	@gcj $(JAVAC_OPTS) $<
