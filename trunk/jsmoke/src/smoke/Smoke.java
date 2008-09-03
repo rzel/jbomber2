@@ -3,6 +3,10 @@ package smoke;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -14,6 +18,10 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLJPanel;
 import javax.media.opengl.glu.GLU;
 import javax.swing.JFrame;
+import javax.swing.JRadioButton;
+import javax.swing.JPanel;
+import javax.swing.ButtonGroup;
+import javax.swing.JLabel;
 import smoke.RFFTWLibrary.*;
 
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
@@ -402,7 +410,68 @@ class Smoke {
 
         new Smoke();
     }
+    
+    class ColorSelectorListener implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+            if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
+            {
+                scalar_col = COLOR_RAINBOW;
+            }
+            else if (e.getActionCommand().equals("COLORMAP_GRAYSCALE"))
+            {
+                scalar_col = COLOR_BLACKWHITE;
+            }
+            else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
+            {
+                scalar_col = COLOR_BANDS;                
+            }
+            else
+            {
+                System.out.println(e.getActionCommand());
+            }
+        }
+    }
 
+    private void initOptionPanel(JFrame frame)
+    {        
+        JRadioButton rainbowButton   = new JRadioButton("Raibow");    
+        rainbowButton.setMnemonic(KeyEvent.VK_R);
+        rainbowButton.setActionCommand("COLORMAP_RAINBOW");
+        rainbowButton.setSelected(true);        
+        scalar_col = COLOR_RAINBOW;
+        rainbowButton.addActionListener(new ColorSelectorListener());
+
+        JRadioButton grayscaleButton = new JRadioButton("Grayscale"); 
+        grayscaleButton.setMnemonic(KeyEvent.VK_G);
+        grayscaleButton.setActionCommand("COLORMAP_GRAYSCALE");
+        grayscaleButton.addActionListener(new ColorSelectorListener());
+        
+        JRadioButton definedButton   = new JRadioButton("Defined"); 
+        definedButton.setMnemonic(KeyEvent.VK_D);
+        definedButton.setActionCommand("COLORMAP_DEFINED");
+        definedButton.addActionListener(new ColorSelectorListener());
+        
+        ButtonGroup colorMapSelectGroup = new ButtonGroup();
+        colorMapSelectGroup.add(rainbowButton);
+        colorMapSelectGroup.add(grayscaleButton);
+        colorMapSelectGroup.add(definedButton);
+        
+        JPanel colorMapSelectPanel = new JPanel();
+        colorMapSelectPanel.setLayout(new GridLayout(4,1));
+        colorMapSelectPanel.add(new JLabel("Colormaps:"));
+        colorMapSelectPanel.add(rainbowButton);
+        colorMapSelectPanel.add(grayscaleButton);
+        colorMapSelectPanel.add(definedButton);
+          
+        JPanel optionPanel = new JPanel();
+        optionPanel.setLayout(new FlowLayout());
+        optionPanel.add(colorMapSelectPanel);
+        
+        frame.add(optionPanel, BorderLayout.EAST);
+    }
+    
     GLJPanel panel;
 
     public Smoke() {
@@ -423,6 +492,7 @@ class Smoke {
 
         // add panel to window
         frame.setLayout(new BorderLayout());
+        initOptionPanel(frame);
         frame.add(panel,BorderLayout.CENTER);
         frame.setSize(500,500);
 
