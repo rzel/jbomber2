@@ -265,9 +265,9 @@ class Smoke {
             case DATASET_RHO:
                 return (float)rho[idx];
             case DATASET_F:
-                return (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]);
+                return (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]) * DIM;
             case DATASET_V:
-                return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]);
+                return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
         }
         
         return 0.0f;
