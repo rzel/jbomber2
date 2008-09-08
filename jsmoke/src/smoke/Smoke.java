@@ -19,6 +19,7 @@ import javax.media.opengl.GLJPanel;
 import javax.media.opengl.glu.GLU;
 import javax.swing.JFrame;
 import javax.swing.JRadioButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
@@ -52,7 +53,10 @@ class Smoke {
     final int COLOR_BANDS=2;
     int   scalar_col = 0;           //method for scalar coloring
     boolean frozen = false;         //toggles on/off the animation
-
+    final int DATASET_RHO = 0;
+    final int DATASET_F = 1;
+    final int DATASET_V = 2;
+    int dataset = 0;                // Rho |V| of|v|
 
 //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
@@ -411,6 +415,29 @@ class Smoke {
         new Smoke();
     }
     
+    class DatasetSelectorListener implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+            if (e.getActionCommand().equals("DATASET_RHO"))
+            {
+                dataset = DATASET_RHO;
+            }
+            else if (e.getActionCommand().equals("DATASET_F"))
+            {
+                dataset = DATASET_F;
+            }
+            else if  (e.getActionCommand().equals("DATASET_V"))
+            {
+                dataset = DATASET_V;                
+            }
+            else
+            {
+                System.out.println("Dataset: " + e.getActionCommand());
+            }            
+        }
+    }
+    
     class ColorSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
@@ -429,14 +456,65 @@ class Smoke {
             }
             else
             {
-                System.out.println(e.getActionCommand());
+                System.out.println("Colormap: " + e.getActionCommand());
             }
         }
     }
+    
+    class SmokeSelectorListener implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+            if (e.getActionCommand().equals("SMOKE_TOGGLE"))
+            {
+                draw_smoke = !draw_smoke;
+            }
+            else if (e.getActionCommand().equals("SMOKE_TOGGLE"))
+            {
+                draw_vecs = !draw_vecs;
+            }
+            else
+            {
+                System.out.println("Smoke: " + e.getActionCommand());
+            }
+        }        
+    }
 
-    private void initOptionPanel(JFrame frame)
-    {        
-        JRadioButton rainbowButton   = new JRadioButton("Raibow");    
+    private JPanel initDatasetSelectPanel() {
+        JRadioButton rhoButton = new JRadioButton("rho");
+        rhoButton.setMnemonic(KeyEvent.VK_R);
+        rhoButton.setActionCommand("DATASET_RHO");
+        rhoButton.setSelected(true);
+        dataset = DATASET_RHO;
+        rhoButton.addActionListener(new DatasetSelectorListener());
+        
+        JRadioButton fButton = new JRadioButton("|f|");
+        fButton.setMnemonic(KeyEvent.VK_F);
+        fButton.setActionCommand("DATASET_F");
+        rhoButton.addActionListener(new DatasetSelectorListener());
+        
+        JRadioButton vButton = new JRadioButton("|v|");
+        vButton.setMnemonic(KeyEvent.VK_V);
+        vButton.setActionCommand("DATASET_V");
+        vButton.addActionListener(new DatasetSelectorListener());  
+        
+        ButtonGroup datasetSelectGroup = new ButtonGroup();
+        datasetSelectGroup.add(rhoButton);
+        datasetSelectGroup.add(fButton);
+        datasetSelectGroup.add(vButton);
+        
+        JPanel datasetSelectPanel = new JPanel();
+        datasetSelectPanel.setLayout(new GridLayout(1, 4));
+        datasetSelectPanel.add(new JLabel("Dataset:"));
+        datasetSelectPanel.add(rhoButton);
+        datasetSelectPanel.add(fButton);
+        datasetSelectPanel.add(vButton);
+        return datasetSelectPanel;
+    }
+    
+    private JPanel initColorMapSelectPanel() {       
+        // Initialize colormap selection
+        JRadioButton rainbowButton = new JRadioButton("Raibow");    
         rainbowButton.setMnemonic(KeyEvent.VK_R);
         rainbowButton.setActionCommand("COLORMAP_RAINBOW");
         rainbowButton.setSelected(true);        
@@ -464,10 +542,37 @@ class Smoke {
         colorMapSelectPanel.add(rainbowButton);
         colorMapSelectPanel.add(grayscaleButton);
         colorMapSelectPanel.add(definedButton);
-          
+        return colorMapSelectPanel;
+    }
+    
+    private JPanel initSmokeSelectPanel()
+    {                
+        JCheckBox smokeButton = new JCheckBox("Smoke"); 
+        smokeButton.setMnemonic(KeyEvent.VK_S);
+        smokeButton.setActionCommand("SMOKE_TOGGLE");
+        smokeButton.addActionListener(new SmokeSelectorListener());
+        
+        JCheckBox vectorButton = new JCheckBox("Vectors"); 
+        vectorButton.setMnemonic(KeyEvent.VK_V);
+        vectorButton.setActionCommand("VECTOR_TOGGLE");
+        vectorButton.addActionListener(new SmokeSelectorListener());
+        
+        JPanel smokeSelectPanel = new JPanel();
+        smokeSelectPanel.setLayout(new GridLayout(3,1));
+        smokeSelectPanel.add(new JLabel("Enable smoke and vectors:"));
+        smokeSelectPanel.add(smokeButton);
+        smokeSelectPanel.add(vectorButton);
+        return smokeSelectPanel;        
+    }
+    
+    private void initOptionPanel(JFrame frame)
+    { 
+        // Initialize option panel
         JPanel optionPanel = new JPanel();
-        optionPanel.setLayout(new FlowLayout());
-        optionPanel.add(colorMapSelectPanel);
+        optionPanel.setLayout(new GridLayout(9,1));
+        optionPanel.add(initDatasetSelectPanel());
+        optionPanel.add(initColorMapSelectPanel());
+        optionPanel.add(initSmokeSelectPanel());
         
         frame.add(optionPanel, BorderLayout.EAST);
     }
