@@ -259,6 +259,19 @@ class Smoke {
             r = g = b = 1; }
         gl.glColor3f(r,g,b);
     }
+    
+    private float getDatasetColor(int idx) {
+         switch (dataset) {
+            case DATASET_RHO:
+                return (float)rho[idx];
+            case DATASET_F:
+                return (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]);
+            case DATASET_V:
+                return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]);
+        }
+        
+        return 0.0f;
+    }
 
     //visualize: This is the main visualization function
     void visualize(GL gl) {
@@ -283,19 +296,20 @@ class Smoke {
                     px = wn + i * wn;
                     py = hn + (j + 1) * hn;
                     idx = ((j + 1) * DIM) + i;
-                    set_colormap(gl, (float)rho[idx]);
+                    
+                    set_colormap(gl, getDatasetColor(idx));
                     gl.glVertex2d(px, py);
                     px = wn + (i + 1) * wn;
                     py = hn + j * hn;
                     idx = (j * DIM) + (i + 1);
-                    set_colormap(gl, (float)rho[idx]);
+                    set_colormap(gl, getDatasetColor(idx));
                     gl.glVertex2d(px, py);
                 }
 
                 px = wn + (float)(DIM - 1) * wn;
                 py = hn + (float)(j + 1) * hn;
                 idx = ((j + 1) * DIM) + (DIM - 1);
-                set_colormap(gl,(float)rho[idx]);
+                set_colormap(gl, getDatasetColor(idx));
                 gl.glVertex2d(px, py);
                 gl.glEnd();
             }
@@ -469,7 +483,7 @@ class Smoke {
             {
                 draw_smoke = !draw_smoke;
             }
-            else if (e.getActionCommand().equals("SMOKE_TOGGLE"))
+            else if (e.getActionCommand().equals("VECTOR_TOGGLE"))
             {
                 draw_vecs = !draw_vecs;
             }
@@ -491,7 +505,7 @@ class Smoke {
         JRadioButton fButton = new JRadioButton("|f|");
         fButton.setMnemonic(KeyEvent.VK_F);
         fButton.setActionCommand("DATASET_F");
-        rhoButton.addActionListener(new DatasetSelectorListener());
+        fButton.addActionListener(new DatasetSelectorListener());
         
         JRadioButton vButton = new JRadioButton("|v|");
         vButton.setMnemonic(KeyEvent.VK_V);
@@ -555,6 +569,7 @@ class Smoke {
         JCheckBox vectorButton = new JCheckBox("Vectors"); 
         vectorButton.setMnemonic(KeyEvent.VK_V);
         vectorButton.setActionCommand("VECTOR_TOGGLE");
+        vectorButton.setSelected(true);
         vectorButton.addActionListener(new SmokeSelectorListener());
         
         JPanel smokeSelectPanel = new JPanel();
