@@ -27,7 +27,7 @@ class Smoke {
     static RFFTWLibrary RFFTW = (RFFTWLibrary)Native.loadLibrary("rfftw",RFFTWLibrary.class);
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
-    final int DIM = 50;		//size of simulation grid
+    final int DIM = 16;		//size of simulation grid
     double dt = 0.4;		//simulation time step
     double visc = 0.001;	//fluid viscosity
     double/*fftw_real*/ vx [], vy  [];        //(vx,vy)   = velocity field at the current moment
@@ -41,12 +41,13 @@ class Smoke {
     int   winWidth, winHeight;     //size of the graphics window, in pixels
     int   color_dir = 0;           //use direction color-coding or not
     float vec_scale = 1000;        //scaling of hedgehogs
-    boolean   draw_smoke = false;  //draw the smoke or not
-    boolean   draw_vecs = true;    //draw the vector field or not
+    boolean   draw_smoke = true;  //draw the smoke or not
+    boolean   draw_vecs = false;    //draw the vector field or not
     final int COLOR_BLACKWHITE=0;  //different types of color mapping: black-and-white, rainbow, banded
     final int COLOR_RAINBOW=1;
     final int COLOR_BANDS=2;
-    int   scalar_col = 0;           //method for scalar coloring
+		final int COLOR_CUSTOM=3;      // wtf enum?
+    int   scalar_col = COLOR_CUSTOM;           //method for scalar coloring
     boolean frozen = false;         //toggles on/off the animation
     final int DATASET_RHO = 0;
     final int DATASET_F = 1;
@@ -217,6 +218,31 @@ class Smoke {
         color[2] = Math.max(0.0f,(3-Math.abs(value-1)-Math.abs(value-2))/2);
     }
 
+		static float maxf=0.0f;
+		void custom_gradient(float f, float[] rgb) {
+			if(f>maxf) {
+				maxf=f;
+				System.out.println("maxf="+maxf);
+			}
+
+// 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
+			f=f/maxf; // Autoscale!
+
+			int n = colortable.getRowCount();
+			float r = (n-1) * f;
+
+			Color a = (Color)colortable.getValueAt((int)r, 0);
+			Color b = (Color)colortable.getValueAt(Math.min((int)r+1, n-1), 0);
+
+			float h = r - (int)r;
+			float l = 1 - h;
+
+
+// 			rgb[0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
+// 			rgb[1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
+// 			rgb[2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
+		}
+
     //set_colormap: Sets three different types of colormaps
     void set_colormap(GL gl, float vy) {
         float[] rgb = new float[3];
@@ -230,6 +256,9 @@ class Smoke {
             vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
             rainbow(vy,rgb);
         }
+				else if(scalar_col==COLOR_CUSTOM) {
+					custom_gradient(vy, rgb);
+				}
 
         gl.glColor3f(rgb[0], rgb[1], rgb[2]);
     }
@@ -371,7 +400,7 @@ class Smoke {
             if (!draw_smoke) draw_vecs = true; break;
             case 'y': draw_vecs = !draw_vecs;
             if (!draw_vecs) draw_smoke = true; break;
-            case 'm': scalar_col++; if (scalar_col>COLOR_BANDS) scalar_col=COLOR_BLACKWHITE; break;
+            case 'm': scalar_col++; if (scalar_col>COLOR_CUSTOM) scalar_col=COLOR_BLACKWHITE; break;
             case 'a': frozen = !frozen; break;
             case 'q': System.exit(0);
         }
@@ -463,6 +492,19 @@ class Smoke {
             {
                 scalar_col = COLOR_BANDS;
             }
+            else if  (e.getActionCommand().equals("COLORMAP_CUSTOM"))
+            {
+                scalar_col = COLOR_CUSTOM;
+            }
+            else if  (e.getActionCommand().equals("SIMULATION_ON"))
+            {
+                frozen = false;
+                do_one_simulation_step();
+            }
+            else if  (e.getActionCommand().equals("SIMULATION_OFF"))
+            {
+                frozen = true;
+            }
             else
             {
                 System.out.println("Colormap: " + e.getActionCommand());
@@ -523,11 +565,9 @@ class Smoke {
 
     private JPanel initColorMapSelectPanel() {
         // Initialize colormap selection
-        JRadioButton rainbowButton = new JRadioButton("Raibow");
+        JRadioButton rainbowButton = new JRadioButton("Rainbow");
         rainbowButton.setMnemonic(KeyEvent.VK_R);
         rainbowButton.setActionCommand("COLORMAP_RAINBOW");
-        rainbowButton.setSelected(true);
-        scalar_col = COLOR_RAINBOW;
         rainbowButton.addActionListener(new ColorSelectorListener());
 
         JRadioButton grayscaleButton = new JRadioButton("Grayscale");
@@ -540,18 +580,55 @@ class Smoke {
         definedButton.setActionCommand("COLORMAP_DEFINED");
         definedButton.addActionListener(new ColorSelectorListener());
 
+        JRadioButton customButton   = new JRadioButton("Custom");
+        customButton.setMnemonic(KeyEvent.VK_C);
+        customButton.setActionCommand("COLORMAP_CUSTOM");
+        customButton.addActionListener(new ColorSelectorListener());
+
         ButtonGroup colorMapSelectGroup = new ButtonGroup();
         colorMapSelectGroup.add(rainbowButton);
         colorMapSelectGroup.add(grayscaleButton);
         colorMapSelectGroup.add(definedButton);
+        colorMapSelectGroup.add(customButton);
 
         JPanel colorMapSelectPanel = new JPanel();
         colorMapSelectPanel.setLayout(new GridLayout(4,1));
-        colorMapSelectPanel.add(new JLabel("Colormaps:"));
+        colorMapSelectPanel.setBorder(new TitledBorder("Colormaps"));
         colorMapSelectPanel.add(rainbowButton);
         colorMapSelectPanel.add(grayscaleButton);
         colorMapSelectPanel.add(definedButton);
-        return colorMapSelectPanel;
+        colorMapSelectPanel.add(customButton);
+
+
+        JPanel onoffpanel = new JPanel();
+        onoffpanel.setBorder(new TitledBorder("Simulation"));
+
+        JRadioButton simOnButton = new JRadioButton("On");
+        simOnButton.setMnemonic(KeyEvent.VK_N);
+        simOnButton.setActionCommand("SIMULATION_ON");
+        simOnButton.addActionListener(new ColorSelectorListener());
+
+        JRadioButton simOffButton = new JRadioButton("Off");
+        simOffButton.setMnemonic(KeyEvent.VK_F);
+        simOffButton.setActionCommand("SIMULATION_OFF");
+        simOffButton.addActionListener(new ColorSelectorListener());
+
+        ButtonGroup simOnOffGroup = new ButtonGroup();
+        simOnOffGroup.add(simOnButton);
+        simOnOffGroup.add(simOffButton);
+
+        onoffpanel.add(simOnButton);
+        onoffpanel.add(simOffButton);
+
+        customButton.setSelected(scalar_col == COLOR_CUSTOM);
+        simOnButton.setSelected(!frozen);
+        simOffButton.setSelected(frozen);
+        rainbowButton.setSelected(scalar_col == COLOR_RAINBOW);
+
+        JPanel blaat = new JPanel();
+        blaat.add(colorMapSelectPanel);
+        blaat.add(onoffpanel);
+        return blaat;
     }
 
     private JPanel initSmokeSelectPanel()
@@ -572,6 +649,10 @@ class Smoke {
         smokeSelectPanel.add(new JLabel("Enable smoke and vectors:"));
         smokeSelectPanel.add(smokeButton);
         smokeSelectPanel.add(vectorButton);
+
+        smokeButton.setSelected(true);
+        vectorButton.setSelected(false);
+
         return smokeSelectPanel;
     }
 
@@ -611,7 +692,7 @@ class Smoke {
 			JScrollPane scroll  = new JScrollPane(colortable);
 
 			JPanel panel = new JPanel();
-			panel.setBorder(new TitledBorder("Custom gradient"));
+			panel.setBorder(new TitledBorder("Current gradient"));
 			BoxLayout panellayout = new BoxLayout(panel, BoxLayout.X_AXIS);
 			panel.setLayout(panellayout);
 
