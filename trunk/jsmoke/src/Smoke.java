@@ -1,29 +1,20 @@
-package smoke;
-
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLJPanel;
 import javax.media.opengl.glu.GLU;
-import javax.swing.JFrame;
-import javax.swing.JRadioButton;
-import javax.swing.JCheckBox;
-import javax.swing.JPanel;
-import javax.swing.ButtonGroup;
-import javax.swing.JLabel;
 import smoke.RFFTWLibrary.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import java.awt.event.*;
+import java.awt.*;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
 
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
  *        the velocity field at the mouse location. Press the indicated keys to change options
@@ -259,7 +250,7 @@ class Smoke {
             r = g = b = 1; }
         gl.glColor3f(r,g,b);
     }
-    
+
     private float getDatasetColor(int idx) {
          switch (dataset) {
             case DATASET_RHO:
@@ -269,7 +260,7 @@ class Smoke {
             case DATASET_V:
                 return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
         }
-        
+
         return 0.0f;
     }
 
@@ -296,7 +287,7 @@ class Smoke {
                     px = wn + i * wn;
                     py = hn + (j + 1) * hn;
                     idx = ((j + 1) * DIM) + i;
-                    
+
                     set_colormap(gl, getDatasetColor(idx));
                     gl.glVertex2d(px, py);
                     px = wn + (i + 1) * wn;
@@ -428,7 +419,7 @@ class Smoke {
 
         new Smoke();
     }
-    
+
     class DatasetSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
@@ -443,15 +434,15 @@ class Smoke {
             }
             else if  (e.getActionCommand().equals("DATASET_V"))
             {
-                dataset = DATASET_V;                
+                dataset = DATASET_V;
             }
             else
             {
                 System.out.println("Dataset: " + e.getActionCommand());
-            }            
+            }
         }
     }
-    
+
     class ColorSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
@@ -466,7 +457,7 @@ class Smoke {
             }
             else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
             {
-                scalar_col = COLOR_BANDS;                
+                scalar_col = COLOR_BANDS;
             }
             else
             {
@@ -474,7 +465,7 @@ class Smoke {
             }
         }
     }
-    
+
     class SmokeSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
@@ -491,7 +482,7 @@ class Smoke {
             {
                 System.out.println("Smoke: " + e.getActionCommand());
             }
-        }        
+        }
     }
 
     private JPanel initDatasetSelectPanel() {
@@ -501,22 +492,22 @@ class Smoke {
         rhoButton.setSelected(true);
         dataset = DATASET_RHO;
         rhoButton.addActionListener(new DatasetSelectorListener());
-        
+
         JRadioButton fButton = new JRadioButton("|f|");
         fButton.setMnemonic(KeyEvent.VK_F);
         fButton.setActionCommand("DATASET_F");
         fButton.addActionListener(new DatasetSelectorListener());
-        
+
         JRadioButton vButton = new JRadioButton("|v|");
         vButton.setMnemonic(KeyEvent.VK_V);
         vButton.setActionCommand("DATASET_V");
-        vButton.addActionListener(new DatasetSelectorListener());  
-        
+        vButton.addActionListener(new DatasetSelectorListener());
+
         ButtonGroup datasetSelectGroup = new ButtonGroup();
         datasetSelectGroup.add(rhoButton);
         datasetSelectGroup.add(fButton);
         datasetSelectGroup.add(vButton);
-        
+
         JPanel datasetSelectPanel = new JPanel();
         datasetSelectPanel.setLayout(new GridLayout(1, 4));
         datasetSelectPanel.add(new JLabel("Dataset:"));
@@ -525,31 +516,31 @@ class Smoke {
         datasetSelectPanel.add(vButton);
         return datasetSelectPanel;
     }
-    
-    private JPanel initColorMapSelectPanel() {       
+
+    private JPanel initColorMapSelectPanel() {
         // Initialize colormap selection
-        JRadioButton rainbowButton = new JRadioButton("Raibow");    
+        JRadioButton rainbowButton = new JRadioButton("Raibow");
         rainbowButton.setMnemonic(KeyEvent.VK_R);
         rainbowButton.setActionCommand("COLORMAP_RAINBOW");
-        rainbowButton.setSelected(true);        
+        rainbowButton.setSelected(true);
         scalar_col = COLOR_RAINBOW;
         rainbowButton.addActionListener(new ColorSelectorListener());
 
-        JRadioButton grayscaleButton = new JRadioButton("Grayscale"); 
+        JRadioButton grayscaleButton = new JRadioButton("Grayscale");
         grayscaleButton.setMnemonic(KeyEvent.VK_G);
         grayscaleButton.setActionCommand("COLORMAP_GRAYSCALE");
         grayscaleButton.addActionListener(new ColorSelectorListener());
-        
-        JRadioButton definedButton   = new JRadioButton("Defined"); 
+
+        JRadioButton definedButton   = new JRadioButton("Defined");
         definedButton.setMnemonic(KeyEvent.VK_D);
         definedButton.setActionCommand("COLORMAP_DEFINED");
         definedButton.addActionListener(new ColorSelectorListener());
-        
+
         ButtonGroup colorMapSelectGroup = new ButtonGroup();
         colorMapSelectGroup.add(rainbowButton);
         colorMapSelectGroup.add(grayscaleButton);
         colorMapSelectGroup.add(definedButton);
-        
+
         JPanel colorMapSelectPanel = new JPanel();
         colorMapSelectPanel.setLayout(new GridLayout(4,1));
         colorMapSelectPanel.add(new JLabel("Colormaps:"));
@@ -558,40 +549,79 @@ class Smoke {
         colorMapSelectPanel.add(definedButton);
         return colorMapSelectPanel;
     }
-    
+
     private JPanel initSmokeSelectPanel()
-    {                
-        JCheckBox smokeButton = new JCheckBox("Smoke"); 
+    {
+        JCheckBox smokeButton = new JCheckBox("Smoke");
         smokeButton.setMnemonic(KeyEvent.VK_S);
         smokeButton.setActionCommand("SMOKE_TOGGLE");
         smokeButton.addActionListener(new SmokeSelectorListener());
-        
-        JCheckBox vectorButton = new JCheckBox("Vectors"); 
+
+        JCheckBox vectorButton = new JCheckBox("Vectors");
         vectorButton.setMnemonic(KeyEvent.VK_V);
         vectorButton.setActionCommand("VECTOR_TOGGLE");
         vectorButton.setSelected(true);
         vectorButton.addActionListener(new SmokeSelectorListener());
-        
+
         JPanel smokeSelectPanel = new JPanel();
         smokeSelectPanel.setLayout(new GridLayout(3,1));
         smokeSelectPanel.add(new JLabel("Enable smoke and vectors:"));
         smokeSelectPanel.add(smokeButton);
         smokeSelectPanel.add(vectorButton);
-        return smokeSelectPanel;        
+        return smokeSelectPanel;
     }
-    
+
+
+		protected JColorChooser colorchooser;
+
+		private JPanel initCustomColorPanel() {
+			colorchooser = new JColorChooser();
+			colorchooser.getSelectionModel().addChangeListener(new CustomColorPanelHandler());
+
+			// Set AbstractColorChooserPanel priority
+			AbstractColorChooserPanel[] panels = colorchooser.getChooserPanels();
+			AbstractColorChooserPanel[] panels2 = new AbstractColorChooserPanel[panels.length + 1];
+			panels2[0] = new ColorSelectorComponent();
+			for(int i = 0; i < panels.length; ++i)
+			{
+				colorchooser.removeChooserPanel(panels[i]);
+				panels2[i + 1] = panels[i];
+			}
+			colorchooser.setChooserPanels(panels2);
+
+			JButton b = new JButton();
+			b.setText("Color Selector");
+			JPanel p = new JPanel();
+			p.setLayout(new FlowLayout());
+			p.add(b);
+
+			b.addActionListener(new CustomColorPanelHandler());
+			return p;
+		}
+
+		class CustomColorPanelHandler implements ActionListener, ChangeListener {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("actionPerformed");
+				colorchooser.showDialog(new JPanel(), "Choose a color", new Color(255,255,255));
+			}
+			public void stateChanged(ChangeEvent e) {
+				System.out.println("stateChanged");
+			}
+		}
+
     private void initOptionPanel(JFrame frame)
-    { 
+    {
         // Initialize option panel
         JPanel optionPanel = new JPanel();
         optionPanel.setLayout(new GridLayout(9,1));
         optionPanel.add(initDatasetSelectPanel());
         optionPanel.add(initColorMapSelectPanel());
         optionPanel.add(initSmokeSelectPanel());
-        
+				optionPanel.add(initCustomColorPanel());
+
         frame.add(optionPanel, BorderLayout.EAST);
     }
-    
+
     GLJPanel panel;
 
     public Smoke() {
