@@ -27,7 +27,7 @@ class Smoke {
     static RFFTWLibrary RFFTW = (RFFTWLibrary)Native.loadLibrary("rfftw",RFFTWLibrary.class);
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
-    final int DIM = 16;		//size of simulation grid
+    final int DIM = 50;		//size of simulation grid
     double dt = 0.4;		//simulation time step
     double visc = 0.001;	//fluid viscosity
     double/*fftw_real*/ vx [], vy  [];        //(vx,vy)   = velocity field at the current moment
@@ -218,15 +218,17 @@ class Smoke {
         color[2] = Math.max(0.0f,(3-Math.abs(value-1)-Math.abs(value-2))/2);
     }
 
-		static float maxf=0.0f;
-		void custom_gradient(float f, float[] rgb) {
-			if(f>maxf) {
-				maxf=f;
-				System.out.println("maxf="+maxf);
-			}
+		private static float maxf=1.0f;
+		private static float maxf_lastframe=1.0f;
+		private static float minf=0.0f;
+		private static float minf_lastframe=0.0f;
 
-// 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
-			f=f/maxf; // Autoscale!
+		void custom_gradient(float f, float[] rgb) {
+			maxf = f > maxf ? f : maxf;
+			minf = f < minf ? f : minf;
+
+			f=(f-minf_lastframe)/(maxf_lastframe-minf_lastframe); // Autoscale!
+			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
 
 			int n = colortable.getRowCount();
 			float r = (n-1) * f;
@@ -236,11 +238,9 @@ class Smoke {
 
 			float h = r - (int)r;
 			float l = 1 - h;
-
-
-// 			rgb[0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
-// 			rgb[1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
-// 			rgb[2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
+			rgb[0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
+			rgb[1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
+			rgb[2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
 		}
 
     //set_colormap: Sets three different types of colormaps
@@ -351,6 +351,10 @@ class Smoke {
             gl.glEnd();
         }
         gl.glFlush(); // forces all opengl commands to complete. Blocking!!
+				maxf_lastframe = maxf;
+				minf_lastframe = minf;
+				maxf = 1.0f;
+				minf = 0.0f;
     }
 
 
@@ -684,10 +688,15 @@ class Smoke {
 
 			tablemodelcolors.setRowCount(0);
 			Object[] o = new Object[1];
-			o[0] = new Color(255,0,0);
+			o[0] = new Color(0,0,255);
 			tablemodelcolors.addRow(o);
 			o[0] = new Color(0,255,0);
 			tablemodelcolors.addRow(o);
+			o[0] = new Color(255,255,0);
+			tablemodelcolors.addRow(o);
+			o[0] = new Color(255,0,0);
+			tablemodelcolors.addRow(o);
+
 
 			JScrollPane scroll  = new JScrollPane(colortable);
 
