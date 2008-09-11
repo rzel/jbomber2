@@ -1,4 +1,4 @@
-SRCDIR   :=./src/smoke
+SRCDIR   :=./src/
 DEPSDIR  :=./.deps
 CLASSDIR :=./build/classes
 JARDIR   :=./build/jar
@@ -9,7 +9,7 @@ CLASSFILES :=$(JAVAFILES:$(SRCDIR)/%.java=$(CLASSDIR)/%.class)
 MAKEFILES  :=Makefile Makefile.inc Makefile.config $(shell cat Makefile.inc 2> /dev/null | sed "s:-include ::")
 
 ifeq ($(CLASSPATH),)
-	CLASSPATH:=.
+	CLASSPATH:=.:..
 endif
 
 CLASSPATH:=$(CLASSPATH):/usr/share/bcel/lib/bcel.jar:$(shell pwd)/dist/lib/gluegen-rt.jar:$(shell pwd)/dist/lib/jna.jar:$(shell pwd)/dist/lib/jogl.jar:${CLASSDIR}
@@ -46,7 +46,7 @@ gcj: clean
 # common targets
 
 run: all
-	cd $(CLASSDIR) && $(JAVA_BIN) smoke.Smoke
+	cd $(CLASSDIR) && $(JAVA_BIN) Smoke
 
 
 jarrun: $(JARDIR)/smoke.jar
