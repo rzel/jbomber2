@@ -12,8 +12,12 @@ import javax.media.opengl.glu.GLU;
 import smoke.RFFTWLibrary.*;
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.border.*;
 import java.awt.event.*;
 import java.awt.*;
+import javax.swing.table.*;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
 
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
@@ -572,54 +576,91 @@ class Smoke {
     }
 
 
-		protected JColorChooser colorchooser;
+		protected ColorSelector colorselector;
+		ColorTable colortable;
+		private JPanel initCustomColorPanel(JFrame frame) {
+			colorselector = new ColorSelector(frame);
+			colorselector.addChangeListener(new CustomColorPanelHandler());
 
-		private JPanel initCustomColorPanel() {
-			colorchooser = new JColorChooser();
-			colorchooser.getSelectionModel().addChangeListener(new CustomColorPanelHandler());
+			DefaultTableModel tablemodelcolors= new DefaultTableModel(1,1);
 
-			// Set AbstractColorChooserPanel priority
-			AbstractColorChooserPanel[] panels = colorchooser.getChooserPanels();
-			AbstractColorChooserPanel[] panels2 = new AbstractColorChooserPanel[panels.length + 1];
-			panels2[0] = new ColorSelectorComponent();
-			for(int i = 0; i < panels.length; ++i)
-			{
-				colorchooser.removeChooserPanel(panels[i]);
-				panels2[i + 1] = panels[i];
-			}
-			colorchooser.setChooserPanels(panels2);
+			tablemodelcolors.addTableModelListener(new ColorTableTableModelListener());
+			colortable = new ColorTable(tablemodelcolors) {
+				private static final long serialVersionUID = 1L; // prevent warning
+				public Class getColumnClass(int column) { //enable JTable to use different renderers, eg Checkbox for Boolean
+					return getValueAt(0, column).getClass();
+				}
+			};
+			colortable.addMouseListener(new ColorTableRightClick(new CustomColorPanelHandler()));
 
-			JButton b = new JButton();
-			b.setText("Color Selector");
-			JPanel p = new JPanel();
-			p.setLayout(new FlowLayout());
-			p.add(b);
+			colortable.getColumnModel().getColumn(colortable.convertColumnIndexToView(0)).setHeaderValue("Colors");
+			colortable.doLayout();
 
-			b.addActionListener(new CustomColorPanelHandler());
-			return p;
+			TableColumnModel cm = colortable.getColumnModel();
+			ColorTableRenderer r = new ColorTableRenderer();
+			TableColumn c = cm.getColumn(0);
+			c.setCellRenderer(r);
+
+			tablemodelcolors.setRowCount(0);
+			Object[] o = new Object[1];
+			o[0] = new Color(255,0,0);
+			tablemodelcolors.addRow(o);
+			o[0] = new Color(0,255,0);
+			tablemodelcolors.addRow(o);
+
+			JScrollPane scroll  = new JScrollPane(colortable);
+
+			JPanel panel = new JPanel();
+			panel.setBorder(new TitledBorder("Custom gradient"));
+			BoxLayout panellayout = new BoxLayout(panel, BoxLayout.X_AXIS);
+			panel.setLayout(panellayout);
+
+			panel.add(scroll);
+
+			return panel;
 		}
 
 		class CustomColorPanelHandler implements ActionListener, ChangeListener {
+
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("actionPerformed");
-				colorchooser.showDialog(new JPanel(), "Choose a color", new Color(255,255,255));
+				if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
+					colorselector.setVisible(true);
+				}
+				else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
+					int row = colortable.getSelectedRow();
+					Object[] o=new Object[1];
+					o[0]=new Color((int)(Math.random()*256), (int)(Math.random()*256), (int)(Math.random()*256));
+					((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
+					colortable.changeSelection(row, 0, false, false);
+				}
+				else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
+					int row = colortable.getSelectedRow();
+					((DefaultTableModel)(colortable.getModel())).removeRow(row);
+				}
 			}
 			public void stateChanged(ChangeEvent e) {
-				System.out.println("stateChanged");
+				if (e.getSource().getClass().getName() == "java.awt.Color") {
+					int row = colortable.getSelectedRow();
+					int column = colortable.getSelectedColumn();
+					if(row>=0 && column>=0) {
+						colortable.setValueAt(e.getSource(), row, column);
+					}
+				}
 			}
 		}
 
-    private void initOptionPanel(JFrame frame)
+    private JPanel initOptionPanel(JFrame frame)
     {
         // Initialize option panel
         JPanel optionPanel = new JPanel();
-        optionPanel.setLayout(new GridLayout(9,1));
+        optionPanel.setLayout(new BoxLayout(optionPanel, BoxLayout.Y_AXIS));
         optionPanel.add(initDatasetSelectPanel());
         optionPanel.add(initColorMapSelectPanel());
         optionPanel.add(initSmokeSelectPanel());
-				optionPanel.add(initCustomColorPanel());
+				optionPanel.add(initCustomColorPanel(frame));
 
-        frame.add(optionPanel, BorderLayout.EAST);
+//         frame.add(optionPanel, BorderLayout.EAST);
+				return optionPanel;
     }
 
     GLJPanel panel;
@@ -639,12 +680,20 @@ class Smoke {
         panel.addMouseMotionListener(new MouseListener());
         panel.addKeyListener(new MyKeyListener());
         panel.setFocusable(true);
+				panel.setPreferredSize(new Dimension(500,0));
 
         // add panel to window
         frame.setLayout(new BorderLayout());
-        initOptionPanel(frame);
-        frame.add(panel,BorderLayout.CENTER);
-        frame.setSize(500,500);
+				JPanel anotherpanel = initOptionPanel(frame);
+				anotherpanel.setPreferredSize(new Dimension(256,0));
+        frame.add(anotherpanel, BorderLayout.EAST);
+        frame.add(panel,BorderLayout.WEST);
+        frame.setSize(768,500);
+				frame.doLayout();
+
+				Point     p = new Point();
+				Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
+				frame.setLocation((int) (d.getWidth()/2) - (frame.getWidth()/2),(int) (d.getHeight()/2)-(frame.getHeight()/2));
 
         // show window
         frame.setVisible(true);
