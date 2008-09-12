@@ -1002,7 +1002,6 @@ class Smoke {
         panel.addMouseMotionListener(new MouseListener());
         panel.addKeyListener(new MyKeyListener());
         panel.setFocusable(true);
-				//panel.setPreferredSize(new Dimension(500,0));
 
         // add panel to window
         frame.setLayout(new BorderLayout());
