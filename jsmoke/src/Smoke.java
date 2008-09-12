@@ -29,7 +29,7 @@ class Smoke {
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
     // final int DIM = 16;		//size of simulation grid
-    final int DIM = 50;		//size of simulation grid
+    final int DIM = 76;		//size of simulation grid
     double dt = 0.4;		//simulation time step
     double visc = 0.001;	//fluid viscosity
     double/*fftw_real*/ vx [], vy  [];        //(vx,vy)   = velocity field at the current moment
@@ -337,7 +337,7 @@ class Smoke {
                 px = wn + (float)i * wn;
                 py = hn + (float)j * hn;
                 idx = (j * DIM) + i;
-                gl.glColor3d(rho[idx],rho[idx],rho[idx]);
+                set_colormap(gl, getDatasetColor(idx));
                 gl.glVertex2d(px,py);
 
                 for (i = 0; i < DIM - 1; i++) {
