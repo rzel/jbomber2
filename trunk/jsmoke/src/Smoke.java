@@ -376,13 +376,26 @@ class Smoke {
             gl.glEnd();
         }
         gl.glFlush(); // forces all opengl commands to complete. Blocking!!
+				++avg_fc;
+				long current = System.nanoTime();
+				if(current - avg_begin > 500000000) {
+						double fps = (((double)(avg_fc_prev * (avg_begin-avg_begin_prev)) + (double)(avg_fc*(current - avg_begin)))/((double)(current-avg_begin_prev)*0.5));
+					frame.setTitle("Real-time smoke simulation and visualization - " + (int)(fps) + "." + (int)((fps-(int)fps)*10)+" fps");
+					avg_begin_prev = avg_begin;
+					avg_begin = current;
+					avg_fc_prev = avg_fc;
+					avg_fc = 0;
+				}
+
 				maxvy_lastframe = maxvy;
 				minvy_lastframe = minvy;
 				maxvy = Float.MIN_VALUE;
 				minvy = Float.MAX_VALUE;
     }
-
-
+    static long avg_begin      = 0;
+    static long avg_begin_prev = 0;
+		static long avg_fc         = 0;
+		static long avg_fc_prev    = 0;
 
 
     //display: Handle window redrawing events. Simply delegates to visualize().
@@ -928,12 +941,13 @@ class Smoke {
     }
 
 	GLCanvas panel;
-
+	JFrame frame;
     public Smoke() {
+
         init_simulation(DIM);	//initialize the simulation data structures
 
         // initialize GUI
-        JFrame frame = new JFrame("Real-time smoke simulation and visualization");
+        frame = new JFrame("Real-time smoke simulation and visualization - 0.0 fps");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         GLCapabilities caps = new GLCapabilities();
         caps.setDoubleBuffered(true);
