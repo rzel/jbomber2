@@ -849,14 +849,15 @@ class Smoke {
 
 			tablemodelcolors.setRowCount(0);
 			Object[] o = new Object[1];
-			o[0] = new Color(0,0,255);
+			o[0] = new Color(0,0,0);
 			tablemodelcolors.addRow(o);
-			o[0] = new Color(0,255,0);
+			o[0] = new Color(0,255,255);
 			tablemodelcolors.addRow(o);
-			o[0] = new Color(255,255,0);
+			o[0] = new Color(255,0,255);
 			tablemodelcolors.addRow(o);
-			o[0] = new Color(255,0,0);
-			tablemodelcolors.addRow(o);
+// 			o[0] = new Color(255,0,0);
+// 			tablemodelcolors.addRow(o);
+			colorCountSlider.setMinimum(colortable.getRowCount() - 1 );
 
 
 			JScrollPane scroll  = new JScrollPane(colortable);
