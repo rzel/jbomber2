@@ -9,7 +9,7 @@ import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
-import javax.media.opengl.GLJPanel;
+import javax.media.opengl.GLCanvas;
 import javax.media.opengl.glu.GLU;
 import javax.swing.*;
 import javax.swing.event.*;
@@ -923,7 +923,7 @@ class Smoke {
 	return tabPane;
     }
 
-    GLJPanel panel;
+	GLCanvas panel;
 
     public Smoke() {
         init_simulation(DIM);	//initialize the simulation data structures
@@ -935,7 +935,7 @@ class Smoke {
         caps.setDoubleBuffered(true);
 
         // initialize opengl Panel
-        panel = new GLJPanel(caps);
+        panel = new GLCanvas(caps);
         panel.addGLEventListener(new MyGLEventListener());
         panel.addMouseMotionListener(new MouseListener());
         panel.addKeyListener(new MyKeyListener());
