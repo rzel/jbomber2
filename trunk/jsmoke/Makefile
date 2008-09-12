@@ -18,7 +18,9 @@ SRCPATH  :=$(SRCDIR)
 LD_HACK :=LD_LIBRARY_PATH=../../lib/:../../lib/jogl/linux-i586/lib/
 JAVA_XCB_HACK := $(shell ls LIBXCB_ALLOW_SLOPPY_LOCK > /dev/null 2>&1 /dev/null && echo "LIBXCB_ALLOW_SLOPPY_LOCK=1")
 AOSS:=$(shell which aoss 2> /dev/null)
+#JAVA_BIN := $(LD_HACK) $(JAVA_XCB_HACK) $(AOSS) java -cp "${CLASSPATH}" -Dsun.java2d.opengl=True -Dsun.java3d.opengl=True
 JAVA_BIN := $(LD_HACK) $(JAVA_XCB_HACK) $(AOSS) java -cp "${CLASSPATH}"
+
 
 -include Makefile.config
 -include Makefile.inc

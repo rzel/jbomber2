@@ -21,7 +21,7 @@ $(CLASSDIR)/%.class: $(SRCDIR)/%.java
 	@jikes $(JAVAC_OPTS) $< +M
 	@mkdir -p $(DEPSDIR)
 # next line from http://make.paulandlesley.org/autodep.html
-	@cp $(CLASSDIR)/smoke/$*.u $(DEPSDIR)/$*.dd; \
+	@cp $(CLASSDIR)/$*.u $(DEPSDIR)/$*.dd; \
 	  sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	  -e '/^$$/ d' -e 's/$$/ :/' < $(DEPSDIR)/$*.dd >> $(DEPSDIR)/$*.d; \
 	  rm -f $(DEPSDIR)/$*.dd
