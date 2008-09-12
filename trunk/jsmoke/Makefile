@@ -57,8 +57,14 @@ jarrun: $(JARDIR)/smoke.jar
 $(JARDIR)/smoke.jar: $(JAVAFILES) $(CLASSFILES)
 	@echo "[packing] smoke.jar"
 	@echo "Manifest-Version: 1.2" > $(CLASSDIR)/MANIFEST.MF.in
-	@echo "Main-Class: smoke.Smoke" >> $(CLASSDIR)/MANIFEST.MF.in
-	@cd $(CLASSDIR) && jar cmf MANIFEST.MF.in smoke.jar smoke
+	@echo "Class-Path: / /lib/jna.jar /lib/gluegen-rt.jar /lib/jogl.jar" >> $(CLASSDIR)/MANIFEST.MF.in
+	@echo "Main-Class: Smoke" >> $(CLASSDIR)/MANIFEST.MF.in
+	@echo "Bundle-NativeCode: /lib/libfftw.so; /lib/librfftw.so; osname=Linux; processor=i586" >> $(CLASSDIR)/MANIFEST.MF.in
+	@mkdir -p $(CLASSDIR)/lib
+	@cp $(shell pwd)/dist/lib/* $(CLASSDIR)/lib
+	@cp $(shell pwd)/lib/lib* $(shell pwd)/lib/*.dll $(CLASSDIR)/lib
+	@cp $(shell pwd)/lib/jogl/linux-i586/lib/* $(CLASSDIR)/lib
+	@cd $(CLASSDIR) && jar cmf MANIFEST.MF.in smoke.jar *.class lib/*
 	@mkdir -p $(JARDIR)
 	@mv $(CLASSDIR)/smoke.jar $(JARDIR)/smoke.jar
 
