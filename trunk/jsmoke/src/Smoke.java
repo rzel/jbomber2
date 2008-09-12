@@ -660,6 +660,7 @@ class Smoke {
     }
 
     JLabel colorCountLabel = new JLabel("Limit colors to 255");
+		JSlider colorCountSlider;
     private JPanel initScalingSelectPanel() {
         JCheckBox clampButton = new JCheckBox("clamping");
         clampButton.setMnemonic(KeyEvent.VK_C);
@@ -672,7 +673,7 @@ class Smoke {
         scaleButton.addActionListener(new ScaleSelectListener());
         scaleButton.setSelected(true);
 
-        JSlider colorCountSlider = new JSlider(JSlider.HORIZONTAL, 0, 255, 255);
+        colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 255, 255);
         colorCountSlider.addChangeListener(new CustomColorPanelHandler());
 
         JPanel clampSelectPanel = new JPanel();
@@ -882,10 +883,12 @@ class Smoke {
 					o[0]=new Color((int)(Math.random()*256), (int)(Math.random()*256), (int)(Math.random()*256));
 					((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
 					colortable.changeSelection(row, 0, false, false);
+					colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 				}
 				else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
 					int row = colortable.getSelectedRow();
 					((DefaultTableModel)(colortable.getModel())).removeRow(row);
+					colorCountSlider.setMinimum(colortable.getRowCount() -1 );
 				}
 			}
 			public void stateChanged(ChangeEvent e) {
@@ -898,7 +901,7 @@ class Smoke {
 				}
                                 else if (e.getSource().getClass().getName().equals("javax.swing.JSlider")) {
                                     int value = ((JSlider)e.getSource()).getValue();
-                                    colorCountLabel.setText("Limit colors to " + value);
+                                    colorCountLabel.setText("Limit colors to " + (value + 1));
                                     ncolors = value;
                                 }
 			}
