@@ -1037,9 +1037,15 @@ class Smoke {
     class MyGLEventListener implements GLEventListener {
         public void init(GLAutoDrawable drawable) {  }
 
+				private boolean setswapint = true;
         public void display(GLAutoDrawable drawable) {
             Smoke.this.do_one_simulation_step();
             GL gl = drawable.getGL();
+						if(setswapint) { //Meh seems NOP in linux :(
+							System.out.println("setSwapInterval");
+							gl.setSwapInterval(1);
+							setswapint = false;
+						}
             Smoke.this.display(gl);
             gl.glFlush();
         }
