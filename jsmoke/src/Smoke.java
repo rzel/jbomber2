@@ -3,13 +3,14 @@ import com.sun.jna.Pointer;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.util.Vector;
+import javax.swing.BoxLayout;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLJPanel;
 import javax.media.opengl.glu.GLU;
-import smoke.RFFTWLibrary.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.border.*;
@@ -27,6 +28,7 @@ class Smoke {
     static RFFTWLibrary RFFTW = (RFFTWLibrary)Native.loadLibrary("rfftw",RFFTWLibrary.class);
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
+    // final int DIM = 16;		//size of simulation grid
     final int DIM = 50;		//size of simulation grid
     double dt = 0.4;		//simulation time step
     double visc = 0.001;	//fluid viscosity
@@ -52,7 +54,14 @@ class Smoke {
     final int DATASET_RHO = 0;
     final int DATASET_F = 1;
     final int DATASET_V = 2;
-    int dataset = 0;                // Rho |V| of|v|
+    int dataset = 0;                // Rho |V| of|f|
+    final int SCALE_NONE = 0;
+    final int SCALE_CLAMP = 1;
+    final int SCALE_SCALE = 2;
+    int scaleMode = SCALE_SCALE;
+    int ncolors = 255;
+    double minClamp = 0.0d;
+    double maxClamp = 1.0d;
 
 //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
@@ -218,16 +227,16 @@ class Smoke {
         color[2] = Math.max(0.0f,(3-Math.abs(value-1)-Math.abs(value-2))/2);
     }
 
-		private static float maxf=1.0f;
-		private static float maxf_lastframe=1.0f;
-		private static float minf=0.0f;
-		private static float minf_lastframe=0.0f;
+		private static float maxvy=1.0f;
+		private static float maxvy_lastframe=1.0f;
+		private static float minvy=0.0f;
+		private static float minvy_lastframe=0.0f;
 
 		void custom_gradient(float f, float[] rgb) {
-			maxf = f > maxf ? f : maxf;
-			minf = f < minf ? f : minf;
+//			maxvy = f > maxvy ? f : maxvy;
+//			minvy = f < minvy ? f : minvy;
 
-			f=(f-minf_lastframe)/(maxf_lastframe-minf_lastframe); // Autoscale!
+	//		f=(f-minvy_lastframe)/(maxvy_lastframe-minvy_lastframe); // Autoscale!
 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
 
 			int n = colortable.getRowCount();
@@ -247,6 +256,21 @@ class Smoke {
     void set_colormap(GL gl, float vy) {
         float[] rgb = new float[3];
 
+        // Clamp
+        if ((scaleMode & SCALE_CLAMP) == SCALE_CLAMP) {
+            vy = (float)(vy<minClamp ? minClamp : vy>maxClamp ? maxClamp : vy); // Clamp!
+        }
+
+        maxvy = vy > maxvy ? vy : maxvy;
+        minvy = vy < minvy ? vy : minvy;
+                        
+        if ((scaleMode & SCALE_SCALE) == SCALE_SCALE) {
+            vy = (vy-minvy_lastframe)/(maxvy_lastframe-minvy_lastframe); // Autoscale!
+        }
+        
+        // Band color count
+        vy *= ncolors; vy = (int)(vy); vy/= ncolors;
+         
         if (scalar_col==COLOR_BLACKWHITE)
             rgb[0]=rgb[1]=rgb[2] = vy;
         else if (scalar_col==COLOR_RAINBOW)
@@ -351,10 +375,10 @@ class Smoke {
             gl.glEnd();
         }
         gl.glFlush(); // forces all opengl commands to complete. Blocking!!
-				maxf_lastframe = maxf;
-				minf_lastframe = minf;
-				maxf = 1.0f;
-				minf = 0.0f;
+				maxvy_lastframe = maxvy;
+				minvy_lastframe = minvy;
+				maxvy = 1.0f;
+				minvy = 0.0f;
     }
 
 
@@ -634,6 +658,142 @@ class Smoke {
         blaat.add(onoffpanel);
         return blaat;
     }
+    
+    JLabel colorCountLabel = new JLabel("Limit colors to 255");
+    private JPanel initScalingSelectPanel() {
+        JCheckBox clampButton = new JCheckBox("clamping");
+        clampButton.setMnemonic(KeyEvent.VK_C);
+        clampButton.setActionCommand("SCALE_CLAMP");
+        clampButton.addActionListener(new ScaleSelectListener());
+        
+        JCheckBox scaleButton = new JCheckBox("scaling");
+        scaleButton.setMnemonic(KeyEvent.VK_S);
+        scaleButton.setActionCommand("SCALE_SCALE");
+        scaleButton.addActionListener(new ScaleSelectListener());
+        scaleButton.setSelected(true);
+        
+        JSlider colorCountSlider = new JSlider(JSlider.HORIZONTAL, 0, 255, 255);
+        colorCountSlider.addChangeListener(new CustomColorPanelHandler());
+        
+        JPanel clampSelectPanel = new JPanel();
+        clampSelectPanel.setLayout(new GridLayout(3,2));
+        clampSelectPanel.add(clampButton);
+        clampSelectPanel.add(new JLabel());
+        clampSelectPanel.add(new JLabel("Low: ", SwingConstants.RIGHT));
+        clampSelectPanel.add(new JSpinner(new MinClampSelectSpinnerModel(0.0d)));
+        clampSelectPanel.add(new JLabel("High: ", SwingConstants.RIGHT));
+        clampSelectPanel.add(new JSpinner(new MaxClampSelectSpinnerModel(1.0d)));
+        
+        JPanel scaleSelectPanel = new JPanel();
+        scaleSelectPanel.setLayout(new BoxLayout(scaleSelectPanel, BoxLayout.Y_AXIS));
+        scaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        clampSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        colorCountSlider.setAlignmentX(Component.LEFT_ALIGNMENT);
+        scaleSelectPanel.setBorder(new TitledBorder("Scaling:"));
+        scaleSelectPanel.add(scaleButton);
+        scaleSelectPanel.add(clampSelectPanel);
+        scaleSelectPanel.add(colorCountLabel);
+        scaleSelectPanel.add(colorCountSlider); 
+        scaleSelectPanel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        return scaleSelectPanel;
+        
+
+    }
+    
+    class MinClampSelectSpinnerModel implements SpinnerModel {
+        private Vector listeners = new Vector();
+        
+        private double value = 0.0d;
+        
+        public MinClampSelectSpinnerModel(double value) {
+            this.value = value;
+            minClamp = value;
+        }
+        
+        public void removeChangeListener(ChangeListener listener) {
+            listeners.remove(listener);
+        }
+        
+        public void addChangeListener(ChangeListener listener) {
+            listeners.add(listener);
+        }
+        
+        public Object getPreviousValue() {
+            return new Double(value - 0.1d);
+        }
+        
+        public Object getNextValue() {
+            return new Double(value + 0.1d);
+        }
+        
+        public void setValue(Object value) {
+            this.value = ((Double)value).doubleValue();
+            
+            for(int i = 0; i < listeners.size(); ++i) {
+                ChangeListener l = (ChangeListener)listeners.get(i);
+                l.stateChanged(new ChangeEvent(this));
+            }
+            
+            minClamp = this.value;
+        }
+        
+        public Object getValue() {
+            return new Double(value);
+        }
+    }
+    
+    class MaxClampSelectSpinnerModel implements SpinnerModel {
+        private Vector listeners = new Vector();
+        
+        private double value = 0.0d;
+        
+        public MaxClampSelectSpinnerModel(double value) {
+            this.value = value;
+            maxClamp = value;
+        }
+        
+        public void removeChangeListener(ChangeListener listener) {
+            listeners.remove(listener);
+        }
+        
+        public void addChangeListener(ChangeListener listener) {
+            listeners.add(listener);
+        }
+        
+        public Object getPreviousValue() {
+            return new Double(value - 0.1d);
+        }
+        
+        public Object getNextValue() {
+            return new Double(value + 0.1d);
+        }
+        
+        public void setValue(Object value) {
+            this.value = ((Double)value).doubleValue();
+            
+            for(int i = 0; i < listeners.size(); ++i) {
+                ChangeListener l = (ChangeListener)listeners.get(i);
+                l.stateChanged(new ChangeEvent(this));
+            }
+            
+            maxClamp = this.value;
+        }
+        
+        public Object getValue() {
+            return new Double(value);
+        }
+    }
+    
+    class ScaleSelectListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            if (e.getActionCommand().equals("SCALE_CLAMP")) {
+                scaleMode ^= SCALE_CLAMP;
+            }
+            else if (e.getActionCommand().equals("SCALE_SCALE")) {
+                scaleMode ^= SCALE_SCALE;
+            }
+        }
+    }
 
     private JPanel initSmokeSelectPanel()
     {
@@ -729,28 +889,38 @@ class Smoke {
 				}
 			}
 			public void stateChanged(ChangeEvent e) {
-				if (e.getSource().getClass().getName() == "java.awt.Color") {
+				if (e.getSource().getClass().getName().equals("java.awt.Color")) {
 					int row = colortable.getSelectedRow();
 					int column = colortable.getSelectedColumn();
 					if(row>=0 && column>=0) {
 						colortable.setValueAt(e.getSource(), row, column);
 					}
 				}
+                                else if (e.getSource().getClass().getName().equals("javax.swing.JSlider")) {
+                                    int value = ((JSlider)e.getSource()).getValue();
+                                    colorCountLabel.setText("Limit colors to " + value);
+                                    ncolors = value;
+                                }
 			}
 		}
 
-    private JPanel initOptionPanel(JFrame frame)
+    private JComponent initOptionPanel(JFrame frame)
     {
+        JTabbedPane tabPane = new JTabbedPane();
+        
         // Initialize option panel
         JPanel optionPanel = new JPanel();
         optionPanel.setLayout(new BoxLayout(optionPanel, BoxLayout.Y_AXIS));
         optionPanel.add(initDatasetSelectPanel());
         optionPanel.add(initColorMapSelectPanel());
+        optionPanel.add(initScalingSelectPanel());
         optionPanel.add(initSmokeSelectPanel());
 				optionPanel.add(initCustomColorPanel(frame));
 
+        tabPane.addTab("Colors", optionPanel);
+
 //         frame.add(optionPanel, BorderLayout.EAST);
-				return optionPanel;
+	return tabPane;
     }
 
     GLJPanel panel;
@@ -770,15 +940,15 @@ class Smoke {
         panel.addMouseMotionListener(new MouseListener());
         panel.addKeyListener(new MyKeyListener());
         panel.setFocusable(true);
-				panel.setPreferredSize(new Dimension(500,0));
+				//panel.setPreferredSize(new Dimension(500,0));
 
         // add panel to window
         frame.setLayout(new BorderLayout());
-				JPanel anotherpanel = initOptionPanel(frame);
+				JComponent anotherpanel = initOptionPanel(frame);
 				anotherpanel.setPreferredSize(new Dimension(256,0));
         frame.add(anotherpanel, BorderLayout.EAST);
-        frame.add(panel,BorderLayout.WEST);
-        frame.setSize(768,500);
+        frame.add(panel,BorderLayout.CENTER);
+        frame.setSize(1000,750);
 				frame.doLayout();
 
 				Point     p = new Point();

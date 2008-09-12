@@ -33,7 +33,7 @@ class ColorTable extends JTable {
 }
 
 
-public class ColorTableTableModelListener implements TableModelListener {
+class ColorTableTableModelListener implements TableModelListener {
 	public void tableChanged(TableModelEvent evt) {
 		if (evt.getType() == TableModelEvent.UPDATE) {
 			int column = evt.getColumn();
@@ -43,7 +43,7 @@ public class ColorTableTableModelListener implements TableModelListener {
 }
 
 
-public class ColorTableRenderer extends DefaultTableCellRenderer { //for coloring cells
+class ColorTableRenderer extends DefaultTableCellRenderer { //for coloring cells
 	private static final long serialVersionUID = 1L; // prevent warning
 
 	public ColorTableRenderer() {
@@ -61,7 +61,7 @@ public class ColorTableRenderer extends DefaultTableCellRenderer { //for colorin
 	}
 }
 
-public class ColorTableRightClick extends MouseAdapter {
+class ColorTableRightClick extends MouseAdapter {
 	private JMenuItem menuitemAddNewColor;
 	private JMenuItem menuitemRemoveColor;
 	private JMenuItem menuitemChooseColor;
