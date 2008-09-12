@@ -24,6 +24,7 @@ import javax.swing.colorchooser.AbstractColorChooserPanel;
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
  *        the velocity field at the mouse location. Press the indicated keys to change options
  */
+
 class Smoke {
     static RFFTWLibrary RFFTW = (RFFTWLibrary)Native.loadLibrary("rfftw",RFFTWLibrary.class);
 
@@ -477,7 +478,6 @@ class Smoke {
         System.out.println("m:     toggle thru scalar coloring");
         System.out.println("a:     toggle the animation on/off\n");
         System.out.println("q:     quit");
-
         new Smoke();
     }
 
