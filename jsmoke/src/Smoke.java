@@ -33,7 +33,7 @@ class Smoke {
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
     // final int DIM = 16;		//size of simulation grid
-    final int DIM = 76;		//size of simulation grid
+    int DIM = 76;		//size of simulation grid
     double dt = 0.4;		//simulation time step
     double visc = 0.001;	//fluid viscosity
     double/*fftw_real*/ vx [], vy  [];        //(vx,vy)   = velocity field at the current moment
@@ -608,7 +608,7 @@ class Smoke {
         datasetSelectPanel.add(vButton);
         return datasetSelectPanel;
     }
-    
+
     private JPanel initColorMapSelectPanel() {
         // Initialize colormap selection
         JRadioButton rainbowButton = new JRadioButton("Rainbow");
@@ -839,6 +839,43 @@ class Smoke {
         return smokeSelectPanel;
     }
 
+		class SimParamListener implements ChangeListener {
+			String type = "";
+			SimParamListener(String s) {
+				type = s;
+			}
+			public void stateChanged(ChangeEvent e) {
+				if(type.equals("DIMENSION")) {
+					DIM = (int)((Double)((JSpinner)e.getSource()).getValue()).doubleValue();
+					init_simulation(DIM);
+				}
+				else if(type.equals("TIMESTEP")) {
+					dt = ((Double)((JSpinner)e.getSource()).getValue()).doubleValue();
+				}
+				else if(type.equals("VISCOSITY")) {
+					visc = ((Double)((JSpinner)e.getSource()).getValue()).doubleValue()/100.0d;
+				}
+			}
+		}
+
+		JPanel initSimParamsPanel() {
+			JPanel simParamsPanel = new JPanel();
+			simParamsPanel.setBorder(new TitledBorder("Simulation Parameters"));
+			simParamsPanel.setLayout(new GridLayout(3,2));
+			JSpinner dimension = new JSpinner(new SpinnerNumberModel(76.0,2.0,150.0,2.0));
+			JSpinner timestep = new JSpinner(new SpinnerNumberModel(0.4d, 0.04d, 4.0d, 0.01d));
+			JSpinner viscosity = new JSpinner(new SpinnerNumberModel(10.0d, 1.0d, 100.0d, 1.0d));
+			dimension.addChangeListener(new SimParamListener("DIMENSION"));
+			timestep.addChangeListener(new SimParamListener("TIMESTEP"));
+			viscosity.addChangeListener(new SimParamListener("VISCOSITY"));
+			simParamsPanel.add(new JLabel("Dimensions: "));
+			simParamsPanel.add(dimension);
+			simParamsPanel.add(new JLabel("Time-Step: "));
+			simParamsPanel.add(timestep);
+			simParamsPanel.add(new JLabel("Viscosity: "));
+			simParamsPanel.add(viscosity);
+			return simParamsPanel;
+		}
 
 		protected ColorSelector colorselector;
 		ColorTable colortable;
@@ -925,7 +962,7 @@ class Smoke {
                                 }
 			}
 		}
-            
+
     private JComponent initOptionPanel(JFrame frame)
     {
         JTabbedPane tabPane = new JTabbedPane();
@@ -939,6 +976,8 @@ class Smoke {
         optionPanel.add(initSmokeSelectPanel());
 				optionPanel.add(initCustomColorPanel(frame));
         optionPanel.add(new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255));
+				optionPanel.add(initSimParamsPanel());
+
         tabPane.addTab("Colors", optionPanel);
 
 //         frame.add(optionPanel, BorderLayout.EAST);
