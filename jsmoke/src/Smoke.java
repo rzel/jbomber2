@@ -3,7 +3,9 @@ import com.sun.jna.Pointer;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.GradientPaint;
 import java.util.Vector;
+import java.util.*;
 import javax.swing.BoxLayout;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
@@ -14,6 +16,7 @@ import javax.media.opengl.glu.GLU;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.border.*;
+import javax.swing.DefaultBoundedRangeModel;
 import java.awt.event.*;
 import java.awt.*;
 import javax.swing.table.*;
@@ -64,7 +67,9 @@ class Smoke {
     double minClamp = 0.0d;
     double maxClamp = 1.0d;
 
-//------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
+    static Vector rainbowColors = new Vector(Arrays.asList(new Color[]{Color.BLUE, new Color(0,255,255), Color.GREEN, Color.YELLOW, Color.RED}));
+    static Vector grayScaleColors = new Vector(Arrays.asList(new Color[]{Color.WHITE, Color.BLACK}));
+    //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
     /**init_simulation: Initialize simulation data structures as a function of the grid size 'n'.
      *                 Although the simulation takes place on a 2D grid, we allocate all data structures as 1D arrays,
@@ -603,7 +608,7 @@ class Smoke {
         datasetSelectPanel.add(vButton);
         return datasetSelectPanel;
     }
-
+    
     private JPanel initColorMapSelectPanel() {
         // Initialize colormap selection
         JRadioButton rainbowButton = new JRadioButton("Rainbow");
@@ -920,7 +925,7 @@ class Smoke {
                                 }
 			}
 		}
-
+            
     private JComponent initOptionPanel(JFrame frame)
     {
         JTabbedPane tabPane = new JTabbedPane();
@@ -933,7 +938,7 @@ class Smoke {
         optionPanel.add(initScalingSelectPanel());
         optionPanel.add(initSmokeSelectPanel());
 				optionPanel.add(initCustomColorPanel(frame));
-
+        optionPanel.add(new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255));
         tabPane.addTab("Colors", optionPanel);
 
 //         frame.add(optionPanel, BorderLayout.EAST);

@@ -11,6 +11,8 @@
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.basic.*;
+import java.util.*;
+import java.awt.GradientPaint;
 
 public class JColoredSlider extends JSlider
 {
@@ -136,5 +138,73 @@ class JHueSlider extends JColoredSlider
 
     ((BasicSliderUI)getUI()).paintLabels(g);
     ((BasicSliderUI)getUI()).paintThumb(g);
+  }
+}
+
+class JSliderlessSlider extends JColoredSlider
+{
+    private Vector colors;
+    private int banding;
+    
+  public JSliderlessSlider(BoundedRangeModel brm, Vector colors, int banding)
+  {
+    super();
+    this.colors = colors;
+    this.banding = banding;
+  }
+
+  public JSliderlessSlider(BoundedRangeModel brm)
+  {
+    super(brm);
+  }
+
+  public JSliderlessSlider(int orientation)
+  {
+    super(orientation);
+  }
+
+  public JSliderlessSlider(int min, int max)
+  {
+    super(min, max);
+  }
+
+  public JSliderlessSlider(int min, int max, int value)
+  {
+    super(min, max, value);
+  }
+
+  public JSliderlessSlider(int orientation, int min, int max, int value)
+  {
+    super(orientation, min, max, value);
+  }
+
+  public void setColors(Vector colors) {
+    this.colors = colors;
+  }
+  
+  public void setBanding(int banding) {
+      this.banding = banding;
+  }
+
+  public void paintComponent(Graphics gr)
+  {
+    float width = getWidth();
+    float height = getHeight();
+
+    Graphics2D g = (Graphics2D)gr;
+    g.setColor(getBackground());
+    g.fillRect(0,0,(int)width,(int)height);
+    
+    float k = 0;
+    for(int i = 0; i < colors.size() - 1; ++i) {
+        GradientPaint gp = new GradientPaint(k, 0, (Color)colors.get(i), k + width/colors.size(), height, (Color)colors.get(i + 1));
+        g.setPaint(gp);
+        g.fillRect((int)k, 0, (int)k + getWidth()/colors.size(), (int)height);
+        k += getWidth()/colors.size();
+    }
+    
+    g.setColor(Color.BLACK);
+    g.drawRect(0, 0, (int)width - 1, (int)height - 1);
+    ((BasicSliderUI)getUI()).paintLabels(g);
   }
 }
