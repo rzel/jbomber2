@@ -63,7 +63,7 @@ class Smoke {
     final int SCALE_CLAMP = 1;
     final int SCALE_SCALE = 2;
     int scaleMode = SCALE_SCALE;
-    int ncolors = 255;
+    int ncolors = 16383;
     double minClamp = 0.0d;
     double maxClamp = 1.0d;
 
@@ -238,9 +238,9 @@ class Smoke {
 		private static float minvy=0.0f;
 		private static float minvy_lastframe=0.0f;
 
-		static float[][] custom_gradient_cache = new float[256][3];
+		static float[][] custom_gradient_cache = new float[16384][3];
 		void custom_gradient(int v, float[] rgb) {
-			v = v < 0 ? 0 : v > 255 ? 255 : v;
+			v = v < 0 ? 0 : v > 16383 ? 16383 : v;
 			rgb[0] = custom_gradient_cache[v][0];
 			rgb[1] = custom_gradient_cache[v][1];
 			rgb[2] = custom_gradient_cache[v][2];
@@ -249,8 +249,8 @@ class Smoke {
 		void generate_custom_gradient_cache() {
 // 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
 			int n = colortable.getRowCount();
-			for(int k = 0; k < 256; ++k) {
-				float f = k * 1.0f/256.0f;
+			for(int k = 0; k < 16384; ++k) {
+				float f = (float)(k * 1.0/16384.0);
 				float r = (n-1) * f;
 				int m = (int)r;
 
@@ -294,7 +294,7 @@ class Smoke {
             rainbow(vy,rgb);
         }
 				else if(scalar_col==COLOR_CUSTOM) {
-					custom_gradient((int)(vy*255 + 0.5), rgb);
+					custom_gradient((int)(vy*16383 + 0.5), rgb);
 				}
 
         gl.glColor3f(rgb[0], rgb[1], rgb[2]);
@@ -684,7 +684,7 @@ class Smoke {
         return blaat;
     }
 
-    JLabel colorCountLabel = new JLabel("Limit colors to 255");
+    JLabel colorCountLabel = new JLabel("Limit colors to 16383");
 		JSlider colorCountSlider;
     private JPanel initScalingSelectPanel() {
         JCheckBox clampButton = new JCheckBox("clamping");
@@ -698,7 +698,7 @@ class Smoke {
         scaleButton.addActionListener(new ScaleSelectListener());
         scaleButton.setSelected(true);
 
-        colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 255, 255);
+        colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 16383, 16383);
         colorCountSlider.addChangeListener(new CustomColorPanelHandler());
 
         JPanel clampSelectPanel = new JPanel();
