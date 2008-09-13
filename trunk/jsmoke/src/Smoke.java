@@ -238,24 +238,31 @@ class Smoke {
 		private static float minvy=0.0f;
 		private static float minvy_lastframe=0.0f;
 
-		void custom_gradient(float f, float[] rgb) {
-//			maxvy = f > maxvy ? f : maxvy;
-//			minvy = f < minvy ? f : minvy;
+		static float[][] custom_gradient_cache = new float[256][3];
+		void custom_gradient(int v, float[] rgb) {
+			v = v < 0 ? 0 : v > 255 ? 255 : v;
+			rgb[0] = custom_gradient_cache[v][0];
+			rgb[1] = custom_gradient_cache[v][1];
+			rgb[2] = custom_gradient_cache[v][2];
+		}
 
-	//		f=(f-minvy_lastframe)/(maxvy_lastframe-minvy_lastframe); // Autoscale!
-			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
-
+		void generate_custom_gradient_cache() {
+// 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
 			int n = colortable.getRowCount();
-			float r = (n-1) * f;
+			for(int k = 0; k < 256; ++k) {
+				float f = k * 1.0f/256.0f;
+				float r = (n-1) * f;
+				int m = (int)r;
 
-			Color a = (Color)colortable.getValueAt((int)r, 0);
-			Color b = (Color)colortable.getValueAt(Math.min((int)r+1, n-1), 0);
+				Color a = (Color)colortable.getValueAt(m, 0);
+				Color b = (Color)colortable.getValueAt(Math.min(m+1, n-1), 0);
 
-			float h = r - (int)r;
-			float l = 1 - h;
-			rgb[0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
-			rgb[1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
-			rgb[2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
+				float h = r - m;
+				float l = 1 - h;
+				custom_gradient_cache[k][0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
+				custom_gradient_cache[k][1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
+				custom_gradient_cache[k][2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
+			}
 		}
 
     //set_colormap: Sets three different types of colormaps
@@ -287,7 +294,7 @@ class Smoke {
             rainbow(vy,rgb);
         }
 				else if(scalar_col==COLOR_CUSTOM) {
-					custom_gradient(vy, rgb);
+					custom_gradient((int)(vy*255 + 0.5), rgb);
 				}
 
         gl.glColor3f(rgb[0], rgb[1], rgb[2]);
@@ -853,7 +860,7 @@ class Smoke {
 					dt = ((Double)((JSpinner)e.getSource()).getValue()).doubleValue();
 				}
 				else if(type.equals("VISCOSITY")) {
-					visc = ((Double)((JSpinner)e.getSource()).getValue()).doubleValue()/100.0d;
+					visc = ((Double)((JSpinner)e.getSource()).getValue()).doubleValue()/1000.0d;
 				}
 			}
 		}
@@ -913,6 +920,7 @@ class Smoke {
 // 			o[0] = new Color(255,0,0);
 // 			tablemodelcolors.addRow(o);
 			colorCountSlider.setMinimum(colortable.getRowCount() - 1 );
+			generate_custom_gradient_cache();
 
 
 			JScrollPane scroll  = new JScrollPane(colortable);
@@ -940,11 +948,13 @@ class Smoke {
 					((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
 					colortable.changeSelection(row, 0, false, false);
 					colorCountSlider.setMinimum(colortable.getRowCount() - 1);
+					generate_custom_gradient_cache();
 				}
 				else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
 					int row = colortable.getSelectedRow();
 					((DefaultTableModel)(colortable.getModel())).removeRow(row);
 					colorCountSlider.setMinimum(colortable.getRowCount() -1 );
+					generate_custom_gradient_cache();
 				}
 			}
 			public void stateChanged(ChangeEvent e) {
@@ -953,6 +963,7 @@ class Smoke {
 					int column = colortable.getSelectedColumn();
 					if(row>=0 && column>=0) {
 						colortable.setValueAt(e.getSource(), row, column);
+						generate_custom_gradient_cache();
 					}
 				}
                                 else if (e.getSource().getClass().getName().equals("javax.swing.JSlider")) {
