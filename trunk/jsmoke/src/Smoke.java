@@ -1053,7 +1053,6 @@ class Smoke {
             Smoke.this.do_one_simulation_step();
             GL gl = drawable.getGL();
 						if(setswapint) { //Meh seems NOP in linux :(
-							System.out.println("setSwapInterval");
 							gl.setSwapInterval(1);
 							setswapint = false;
 						}
