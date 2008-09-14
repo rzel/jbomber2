@@ -935,6 +935,10 @@ class Smoke {
 
 			public void actionPerformed(ActionEvent e) {
 				if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
+					int row = colortable.getSelectedRow();
+					int column = colortable.getSelectedColumn();
+					if(row>=0 && column>=0)
+						colorselector.setSelectedColor((Color)colortable.getValueAt(row, column));
 					colorselector.setVisible(true);
 				}
 				else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
