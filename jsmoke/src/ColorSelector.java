@@ -73,6 +73,10 @@ public class ColorSelector extends JDialog implements MouseListener, ChangeListe
   super.setVisible(b);
  }
 
+ void setSelectedColor(Color c) {
+  colorchooser.getSelectionModel().setSelectedColor(c);
+ }
+
  public void actionPerformed(ActionEvent e) {}
  public void mouseReleased (MouseEvent e) {}
  public void mouseExited (MouseEvent e) {}
