@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.GradientPaint;
+import java.awt.color.ColorSpace;
 import java.util.Vector;
 import java.util.*;
 import javax.swing.BoxLayout;
@@ -241,21 +242,39 @@ class Smoke {
 		static float[][] custom_gradient_cache = new float[16384][3];
 
 		void generate_custom_gradient_cache() {
-// 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
 			int n = colortable.getRowCount();
+			ColorSpace cs = ((Color)colortable.getValueAt(0, 0)).getColorSpace(); // Assume all colors use the same color space
+			Color a = null, b = null;
+			float[] a_cc, b_cc;
+			int cm = -1;
 			for(int k = 0; k < 16384; ++k) {
 				float f = (float)(k * 1.0/16384.0);
 				float r = (n-1) * f;
 				int m = (int)r;
 
-				Color a = (Color)colortable.getValueAt(m, 0);
-				Color b = (Color)colortable.getValueAt(Math.min(m+1, n-1), 0);
+				if(m != cm) {
+					a = (Color)colortable.getValueAt(m, 0);
+					b = (Color)colortable.getValueAt(Math.min(m+1, n-1), 0);
+					cm = m;
+				}
 
 				float h = r - m;
 				float l = 1 - h;
-				custom_gradient_cache[k][0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
-				custom_gradient_cache[k][1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
-				custom_gradient_cache[k][2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
+
+				a_cc = a.getColorComponents(null);
+				b_cc = b.getColorComponents(null);
+
+				a_cc = cs.toCIEXYZ(a_cc);
+				b_cc = cs.toCIEXYZ(b_cc);
+				a_cc[0] = (a_cc[0] * l + b_cc[0] * h);
+				a_cc[1] = (a_cc[1] * l + b_cc[1] * h);
+				a_cc[2] = (a_cc[2] * l + b_cc[2] * h);
+				a_cc = cs.fromCIEXYZ(a_cc);
+
+				float[] rgb = cs.toRGB(a_cc);
+				custom_gradient_cache[k][0] = a_cc[0];
+				custom_gradient_cache[k][1] = a_cc[1];
+				custom_gradient_cache[k][2] = a_cc[2];
 			}
 		}
 
