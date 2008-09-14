@@ -239,12 +239,6 @@ class Smoke {
 		private static float minvy_lastframe=0.0f;
 
 		static float[][] custom_gradient_cache = new float[16384][3];
-		void custom_gradient(int v, float[] rgb) {
-			v = v < 0 ? 0 : v > 16383 ? 16383 : v;
-			rgb[0] = custom_gradient_cache[v][0];
-			rgb[1] = custom_gradient_cache[v][1];
-			rgb[2] = custom_gradient_cache[v][2];
-		}
 
 		void generate_custom_gradient_cache() {
 // 			f = f<0.0f ? 0.0f : f>1.0f ? 1.0f : f; // Clamp!
@@ -294,7 +288,9 @@ class Smoke {
             rainbow(vy,rgb);
         }
 				else if(scalar_col==COLOR_CUSTOM) {
-					custom_gradient((int)(vy*16383 + 0.5), rgb);
+					int v = (int)(vy*16383 + 0.5);
+					v = v < 0 ? 0 : v > 16383 ? 16383 : v;
+					rgb = custom_gradient_cache[v];
 				}
 
         gl.glColor3f(rgb[0], rgb[1], rgb[2]);
