@@ -421,6 +421,7 @@ class Smoke {
 					avg_begin = current;
 					avg_fc_prev = avg_fc;
 					avg_fc = 0;
+                                        colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
 				}
 
 				maxvy_lastframe = maxvy;
@@ -549,24 +550,47 @@ class Smoke {
     class ColorSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
-        {
-            colorOverviewSlider.setColors(custom_gradient_cache, ncolors);
-                    
+        {                   
             if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
             {
                 scalar_col = COLOR_RAINBOW;
+                
+                float[][] colors = new float[16384][3];
+                
+                for(int i = 0; i < colors.length; ++i) {
+                    rainbow(i / (float)colors.length, colors[i]);
+                }
+                colorOverviewSlider.setColors(colors, ncolors);
             }
             else if (e.getActionCommand().equals("COLORMAP_GRAYSCALE"))
             {
                 scalar_col = COLOR_BLACKWHITE;
+                
+                float[][] colors = new float[16384][3];
+                
+                for(int i = 0; i < colors.length; ++i) {
+                    colors[i][0] = colors[i][1] = colors[i][2] = i / (float)colors.length;
+                }
+                colorOverviewSlider.setColors(colors, ncolors);
             }
             else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
             {
                 scalar_col = COLOR_BANDS;
+                
+                float[][] colors = new float[16384][3];
+                final int NLEVELS = 7;           
+                
+                for(int i = 0; i < colors.length; ++i) {
+                    float vy = i / (float)colors.length;
+                    vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
+                    rainbow(vy, colors[i]);
+                }
+                colorOverviewSlider.setColors(colors, ncolors);
             }
             else if  (e.getActionCommand().equals("COLORMAP_CUSTOM"))
             {
                 scalar_col = COLOR_CUSTOM;
+                colorOverviewSlider.setColors(custom_gradient_cache, ncolors);
             }
             else if  (e.getActionCommand().equals("SIMULATION_ON"))
             {
@@ -1040,6 +1064,7 @@ class Smoke {
                                     int value = ((JSlider)e.getSource()).getValue();
                                     colorCountLabel.setText("Limit colors to " + (value + 1));
                                     ncolors = value;
+                                    colorOverviewSlider.setCount(ncolors);
                                 }
 			}
 		}
@@ -1052,7 +1077,10 @@ class Smoke {
         colorOverviewPanel.setLayout(new BoxLayout(colorOverviewPanel, BoxLayout.Y_AXIS));
         colorOverviewPanel.setBorder(new TitledBorder("Colormap preview:"));
         colorOverviewSlider.setMinimum(0);
-        colorOverviewSlider.setMaximum(1);
+        colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
+        colorOverviewSlider.setMajorTickSpacing(1);
+        colorOverviewSlider.setPaintTicks(true);             
+        colorOverviewSlider.setPaintLabels(true);
         colorOverviewPanel.add(colorOverviewSlider);        
         
         JTabbedPane tabPane = new JTabbedPane();

@@ -202,26 +202,11 @@ class JSliderlessSlider extends JColoredSlider
     for(int i = 0; i < width; ++i) {
     	double pos = ((double)i) / width;
     	pos *= count ; pos = (int)(pos + .5); pos /= count;
-    	int c = (int)(16384 * pos);
+    	int c = (int)(16383 * pos);
     	g.setColor(new Color(colors[c][0], colors[c][1], colors[c][2]));
-    	g.drawLine(i, 0, i, (int)height);
+    	g.drawLine(i, 0, i, (int)height / 2);
     }
 
-
-
-
-/*    for(int i = 0; i < count - 1; ++i) {
-        Color color1 = new Color(colors[i][0], colors[i][1], colors[i][2]);
-        Color color2 = new Color(colors[i + 1][0], colors[i + 1][1], colors[i + 1][2]);
-        GradientPaint gp = new GradientPaint(k, 0, color1, k + width/count, height, color2);
-        g.setPaint(gp);
-        g.fillRect((int)k, 0, (int)k + getWidth()/count + 1, (int)height);
-        k += getWidth()/count;
-    }
-*/
-
-    g.setColor(Color.BLACK);
-    g.drawRect(0, 0, (int)width - 1, (int)height - 1);
     ((BasicSliderUI)getUI()).paintLabels(g);
     ((BasicSliderUI)getUI()).paintTicks(g);
   }
