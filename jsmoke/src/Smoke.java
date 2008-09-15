@@ -509,15 +509,8 @@ class Smoke {
         System.out.println("Fluid Flow Simulation and Visualization");
         System.out.println("=======================================");
         System.out.println("Click and drag the mouse to steer the flow!");
-        System.out.println("T/t:   increase/decrease simulation timestep");
         System.out.println("S/s:   increase/decrease hedgehog scaling");
         System.out.println("c:     toggle direction coloring on/off");
-        System.out.println("V/v:   increase decrease fluid viscosity");
-        System.out.println("x:     toggle drawing matter on/off");
-        System.out.println("y:     toggle drawing hedgehogs on/off");
-        System.out.println("m:     toggle thru scalar coloring");
-        System.out.println("a:     toggle the animation on/off\n");
-        System.out.println("q:     quit");
         new Smoke();
     }
 
