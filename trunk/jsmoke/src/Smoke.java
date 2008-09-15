@@ -550,7 +550,7 @@ class Smoke {
     {
         public void actionPerformed(ActionEvent e)
         {
-            colorOverviewSlider.setColors(custom_gradient_cache);
+            colorOverviewSlider.setColors(custom_gradient_cache, ncolors);
                     
             if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
             {
@@ -1047,6 +1047,14 @@ class Smoke {
     private JSliderlessSlider colorOverviewSlider = new JSliderlessSlider(new DefaultBoundedRangeModel(), custom_gradient_cache, 255);
     private JComponent initOptionPanel(JFrame frame)
     {
+        JPanel colorOverviewPanel = new JPanel();
+        colorOverviewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        colorOverviewPanel.setLayout(new BoxLayout(colorOverviewPanel, BoxLayout.Y_AXIS));
+        colorOverviewPanel.setBorder(new TitledBorder("Colormap preview:"));
+        colorOverviewSlider.setMinimum(0);
+        colorOverviewSlider.setMaximum(1);
+        colorOverviewPanel.add(colorOverviewSlider);        
+        
         JTabbedPane tabPane = new JTabbedPane();
 
         // Initialize option panel
@@ -1055,17 +1063,10 @@ class Smoke {
         optionPanel.add(initSimOnOffPanel());
         optionPanel.add(initDatasetSelectPanel());
 				optionPanel.add(initScalingSelectPanel());
+                                
+        optionPanel.add(colorOverviewPanel);
         optionPanel.add(initColorMapSelectPanel(frame));
         optionPanel.add(initSmokeSelectPanel());
-        
-        JPanel colorOverviewPanel = new JPanel();
-        colorOverviewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        colorOverviewPanel.setLayout(new BoxLayout(colorOverviewPanel, BoxLayout.Y_AXIS));
-        colorOverviewPanel.setBorder(new TitledBorder("Colormap overview:"));
-        colorOverviewSlider.setMinimum(0);
-        colorOverviewSlider.setMaximum(1);
-        colorOverviewPanel.add(colorOverviewSlider);
-        optionPanel.add(colorOverviewPanel);
         
         optionPanel.add(initSimParamsPanel());
 
