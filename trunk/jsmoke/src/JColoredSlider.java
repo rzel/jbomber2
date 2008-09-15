@@ -180,10 +180,12 @@ class JSliderlessSlider extends JColoredSlider
 
   public void setColors(Vector colors) {
     this.colors = colors;
+    repaint();
   }
   
   public void setBanding(int banding) {
       this.banding = banding;
+      repaint();
   }
 
   public void paintComponent(Graphics gr)
@@ -206,5 +208,6 @@ class JSliderlessSlider extends JColoredSlider
     g.setColor(Color.BLACK);
     g.drawRect(0, 0, (int)width - 1, (int)height - 1);
     ((BasicSliderUI)getUI()).paintLabels(g);
+    ((BasicSliderUI)getUI()).paintTicks(g);
   }
 }

@@ -543,18 +543,32 @@ class Smoke {
         {
             if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
             {
+                colorOverviewSlider.setColors(rainbowColors);
                 scalar_col = COLOR_RAINBOW;
             }
             else if (e.getActionCommand().equals("COLORMAP_GRAYSCALE"))
             {
+                colorOverviewSlider.setColors(grayScaleColors);
                 scalar_col = COLOR_BLACKWHITE;
             }
             else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
             {
+                colorOverviewSlider.setColors(rainbowColors);
+                colorOverviewSlider.setBanding(4);
                 scalar_col = COLOR_BANDS;
             }
             else if  (e.getActionCommand().equals("COLORMAP_CUSTOM"))
             {
+                Vector colors = new Vector();
+                int m = colortable.getRowCount();
+                
+                for (int i = 0; i < m; ++i) {
+                    colors.add((Color)colortable.getValueAt(i, 0));
+                }
+                
+                System.out.println(colors.size());
+                
+                colorOverviewSlider.setColors(colors);
                 scalar_col = COLOR_CUSTOM;
             }
             else if  (e.getActionCommand().equals("SIMULATION_ON"))
@@ -1005,6 +1019,7 @@ class Smoke {
 			}
 		}
 
+    private JSliderlessSlider colorOverviewSlider = new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255);
     private JComponent initOptionPanel(JFrame frame)
     {
         JTabbedPane tabPane = new JTabbedPane();
@@ -1017,6 +1032,11 @@ class Smoke {
 				optionPanel.add(initScalingSelectPanel());
         optionPanel.add(initColorMapSelectPanel(frame));
         optionPanel.add(initSmokeSelectPanel());
+	optionPanel.add(initCustomColorPanel(frame));
+        colorOverviewSlider.setMinimum(0);
+        colorOverviewSlider.setMaximum(1);
+        optionPanel.add(colorOverviewSlider);
+        optionPanel.add(initSimParamsPanel());
         optionPanel.add(new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255));
 				optionPanel.add(initSimParamsPanel());
 
