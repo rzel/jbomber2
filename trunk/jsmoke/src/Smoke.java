@@ -616,15 +616,16 @@ class Smoke {
         datasetSelectGroup.add(vButton);
 
         JPanel datasetSelectPanel = new JPanel();
-        datasetSelectPanel.setLayout(new GridLayout(1, 4));
-        datasetSelectPanel.add(new JLabel("Dataset:"));
+        datasetSelectPanel.setLayout(new BoxLayout(datasetSelectPanel, BoxLayout.X_AXIS));
+        datasetSelectPanel.setBorder(new TitledBorder("Dataset"));
         datasetSelectPanel.add(rhoButton);
         datasetSelectPanel.add(fButton);
         datasetSelectPanel.add(vButton);
+        datasetSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return datasetSelectPanel;
     }
 
-    private JPanel initColorMapSelectPanel() {
+    private JPanel initColorMapSelectPanel(JFrame frame) {
         // Initialize colormap selection
         JRadioButton rainbowButton = new JRadioButton("Rainbow");
         rainbowButton.setMnemonic(KeyEvent.VK_R);
@@ -652,17 +653,37 @@ class Smoke {
         colorMapSelectGroup.add(definedButton);
         colorMapSelectGroup.add(customButton);
 
+        rainbowButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        grayscaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        definedButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        customButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JPanel colorMapSelectPanel = new JPanel();
-        colorMapSelectPanel.setLayout(new GridLayout(4,1));
+        colorMapSelectPanel.setLayout(new BoxLayout(colorMapSelectPanel, BoxLayout.Y_AXIS));
         colorMapSelectPanel.setBorder(new TitledBorder("Colormaps"));
+
         colorMapSelectPanel.add(rainbowButton);
         colorMapSelectPanel.add(grayscaleButton);
         colorMapSelectPanel.add(definedButton);
         colorMapSelectPanel.add(customButton);
 
+        JPanel y = initCustomColorPanel(frame);
+        y.setBorder(new EmptyBorder(0,24,0,0));
+        y.setAlignmentX(Component.LEFT_ALIGNMENT);
+        colorMapSelectPanel.add(y);
 
-        JPanel onoffpanel = new JPanel();
+        customButton.setSelected(scalar_col == COLOR_CUSTOM);
+
+        rainbowButton.setSelected(scalar_col == COLOR_RAINBOW);
+
+        colorMapSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return colorMapSelectPanel;
+    }
+
+		private JPanel initSimOnOffPanel() {
+				JPanel onoffpanel = new JPanel();
         onoffpanel.setBorder(new TitledBorder("Simulation"));
+        onoffpanel.setLayout(new BoxLayout(onoffpanel, BoxLayout.X_AXIS));
 
         JRadioButton simOnButton = new JRadioButton("On");
         simOnButton.setMnemonic(KeyEvent.VK_N);
@@ -681,16 +702,12 @@ class Smoke {
         onoffpanel.add(simOnButton);
         onoffpanel.add(simOffButton);
 
-        customButton.setSelected(scalar_col == COLOR_CUSTOM);
         simOnButton.setSelected(!frozen);
         simOffButton.setSelected(frozen);
-        rainbowButton.setSelected(scalar_col == COLOR_RAINBOW);
 
-        JPanel blaat = new JPanel();
-        blaat.add(colorMapSelectPanel);
-        blaat.add(onoffpanel);
-        return blaat;
-    }
+        onoffpanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return onoffpanel;
+		}
 
     JLabel colorCountLabel = new JLabel("Limit colors to 16383");
 		JSlider colorCountSlider;
@@ -722,13 +739,13 @@ class Smoke {
         scaleSelectPanel.setLayout(new BoxLayout(scaleSelectPanel, BoxLayout.Y_AXIS));
         scaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         clampSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        colorCountLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
         colorCountSlider.setAlignmentX(Component.LEFT_ALIGNMENT);
         scaleSelectPanel.setBorder(new TitledBorder("Scaling:"));
         scaleSelectPanel.add(scaleButton);
         scaleSelectPanel.add(clampSelectPanel);
         scaleSelectPanel.add(colorCountLabel);
         scaleSelectPanel.add(colorCountSlider);
-        scaleSelectPanel.setAlignmentX(Component.RIGHT_ALIGNMENT);
         return scaleSelectPanel;
 
 
@@ -844,13 +861,14 @@ class Smoke {
 
         JPanel smokeSelectPanel = new JPanel();
         smokeSelectPanel.setLayout(new GridLayout(3,1));
-        smokeSelectPanel.add(new JLabel("Enable smoke and vectors:"));
+        smokeSelectPanel.setBorder(new TitledBorder("Visualizations"));
         smokeSelectPanel.add(smokeButton);
         smokeSelectPanel.add(vectorButton);
 
         smokeButton.setSelected(true);
         vectorButton.setSelected(false);
 
+				smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return smokeSelectPanel;
     }
 
@@ -889,6 +907,7 @@ class Smoke {
 			simParamsPanel.add(timestep);
 			simParamsPanel.add(new JLabel("Viscosity: "));
 			simParamsPanel.add(viscosity);
+			simParamsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 			return simParamsPanel;
 		}
 
@@ -993,18 +1012,17 @@ class Smoke {
         // Initialize option panel
         JPanel optionPanel = new JPanel();
         optionPanel.setLayout(new BoxLayout(optionPanel, BoxLayout.Y_AXIS));
+        optionPanel.add(initSimOnOffPanel());
         optionPanel.add(initDatasetSelectPanel());
-        optionPanel.add(initColorMapSelectPanel());
-        optionPanel.add(initScalingSelectPanel());
+				optionPanel.add(initScalingSelectPanel());
+        optionPanel.add(initColorMapSelectPanel(frame));
         optionPanel.add(initSmokeSelectPanel());
-				optionPanel.add(initCustomColorPanel(frame));
         optionPanel.add(new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255));
 				optionPanel.add(initSimParamsPanel());
 
         tabPane.addTab("Colors", optionPanel);
 
-//         frame.add(optionPanel, BorderLayout.EAST);
-	return tabPane;
+			return tabPane;
     }
 
 	GLCanvas panel;
