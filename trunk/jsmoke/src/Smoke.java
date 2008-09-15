@@ -240,7 +240,7 @@ class Smoke {
 		private static float minvy_lastframe=0.0f;
 
 		static float[][] custom_gradient_cache = new float[16384][3];
-
+		int custom_gradient_interpolate_mode = 0;
 		void generate_custom_gradient_cache() {
 			int n = colortable.getRowCount();
 			ColorSpace cs = ((Color)colortable.getValueAt(0, 0)).getColorSpace(); // Assume all colors use the same color space
@@ -261,20 +261,29 @@ class Smoke {
 				float h = r - m;
 				float l = 1 - h;
 
-				a_cc = a.getColorComponents(null);
-				b_cc = b.getColorComponents(null);
+				switch(custom_gradient_interpolate_mode) {
+					case 0: {
+						custom_gradient_cache[k][0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
+						custom_gradient_cache[k][1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
+						custom_gradient_cache[k][2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
+					}; break;
+					case 1: {
+						a_cc = a.getColorComponents(null);
+						b_cc = b.getColorComponents(null);
 
-				a_cc = cs.toCIEXYZ(a_cc);
-				b_cc = cs.toCIEXYZ(b_cc);
-				a_cc[0] = (a_cc[0] * l + b_cc[0] * h);
-				a_cc[1] = (a_cc[1] * l + b_cc[1] * h);
-				a_cc[2] = (a_cc[2] * l + b_cc[2] * h);
-				a_cc = cs.fromCIEXYZ(a_cc);
+						a_cc = cs.toCIEXYZ(a_cc);
+						b_cc = cs.toCIEXYZ(b_cc);
+						a_cc[0] = (a_cc[0] * l + b_cc[0] * h);
+						a_cc[1] = (a_cc[1] * l + b_cc[1] * h);
+						a_cc[2] = (a_cc[2] * l + b_cc[2] * h);
+						a_cc = cs.fromCIEXYZ(a_cc);
 
-				float[] rgb = cs.toRGB(a_cc);
-				custom_gradient_cache[k][0] = a_cc[0];
-				custom_gradient_cache[k][1] = a_cc[1];
-				custom_gradient_cache[k][2] = a_cc[2];
+						float[] rgb = cs.toRGB(a_cc);
+						custom_gradient_cache[k][0] = a_cc[0];
+						custom_gradient_cache[k][1] = a_cc[1];
+						custom_gradient_cache[k][2] = a_cc[2];
+					}; break;
+				}
 			}
 		}
 
@@ -959,8 +968,28 @@ class Smoke {
 			BoxLayout panellayout = new BoxLayout(panel, BoxLayout.X_AXIS);
 			panel.setLayout(panellayout);
 
+			JRadioButton colorInterpolateModeRGB = new JRadioButton("Interpolate in RGB space");
+			JRadioButton colorInterpolateModeHSV = new JRadioButton("Interpolate in HSV space");
+			colorInterpolateModeRGB.setActionCommand("INTERPOLATE_RGB");
+			colorInterpolateModeHSV.setActionCommand("INTERPOLATE_HSV");
+			colorInterpolateModeRGB.addActionListener(new CustomColorPanelHandler());
+			colorInterpolateModeHSV.addActionListener(new CustomColorPanelHandler());
+			colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == 0);
+			colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == 0);
+			ButtonGroup colorInterpolateModeGroup = new ButtonGroup();
+			colorInterpolateModeGroup.add(colorInterpolateModeRGB);
+			colorInterpolateModeGroup.add(colorInterpolateModeHSV);
+			JPanel colorInterpolateModePanel = new JPanel();
+			colorInterpolateModePanel.setLayout(new BoxLayout(colorInterpolateModePanel, BoxLayout.Y_AXIS));
+			colorInterpolateModeRGB.setAlignmentX(Component.LEFT_ALIGNMENT);
+			colorInterpolateModeHSV.setAlignmentX(Component.LEFT_ALIGNMENT);
+			colorInterpolateModePanel.add(colorInterpolateModeRGB);
+			colorInterpolateModePanel.add(colorInterpolateModeHSV);
+			colorInterpolateModePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+			scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+			panel.add(colorInterpolateModePanel);
 			panel.add(scroll);
-
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 			return panel;
 		}
 
@@ -987,6 +1016,14 @@ class Smoke {
 					int row = colortable.getSelectedRow();
 					((DefaultTableModel)(colortable.getModel())).removeRow(row);
 					colorCountSlider.setMinimum(colortable.getRowCount() -1 );
+					generate_custom_gradient_cache();
+				}
+				else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
+					custom_gradient_interpolate_mode = 0;
+					generate_custom_gradient_cache();
+				}
+				else if (e.getActionCommand().equals("INTERPOLATE_HSV")) {
+					custom_gradient_interpolate_mode = 1;
 					generate_custom_gradient_cache();
 				}
 			}
