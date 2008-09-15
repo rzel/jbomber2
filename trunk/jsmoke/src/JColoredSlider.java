@@ -146,7 +146,7 @@ class JSliderlessSlider extends JColoredSlider
     private float[][] colors;
     private int banding;
     private int count;
-    
+
   public JSliderlessSlider(BoundedRangeModel brm, float[][] colors, int count)
   {
     super();
@@ -183,7 +183,7 @@ class JSliderlessSlider extends JColoredSlider
     this.colors = colors;
     repaint();
   }
-  
+
   public void setCount(int count) {
       this.count = count;
       repaint();
@@ -191,15 +191,26 @@ class JSliderlessSlider extends JColoredSlider
 
   public void paintComponent(Graphics gr)
   {
-    float width = getWidth();
-    float height = getHeight();
+    double width = getWidth();
+    double height = getHeight();
 
     Graphics2D g = (Graphics2D)gr;
     g.setColor(getBackground());
     g.fillRect(0,0,(int)width,(int)height);
-    
+
     float k = 0;
-    for(int i = 0; i < count - 1; ++i) {
+    for(int i = 0; i < width; ++i) {
+    	double pos = ((double)i) / width;
+    	pos *= count ; pos = (int)(pos + .5); pos /= count;
+    	int c = (int)(16384 * pos);
+    	g.setColor(new Color(colors[c][0], colors[c][1], colors[c][2]));
+    	g.drawLine(i, 0, i, (int)height);
+    }
+
+
+
+
+/*    for(int i = 0; i < count - 1; ++i) {
         Color color1 = new Color(colors[i][0], colors[i][1], colors[i][2]);
         Color color2 = new Color(colors[i + 1][0], colors[i + 1][1], colors[i + 1][2]);
         GradientPaint gp = new GradientPaint(k, 0, color1, k + width/count, height, color2);
@@ -207,7 +218,8 @@ class JSliderlessSlider extends JColoredSlider
         g.fillRect((int)k, 0, (int)k + getWidth()/count + 1, (int)height);
         k += getWidth()/count;
     }
-    
+*/
+
     g.setColor(Color.BLACK);
     g.drawRect(0, 0, (int)width - 1, (int)height - 1);
     ((BasicSliderUI)getUI()).paintLabels(g);
