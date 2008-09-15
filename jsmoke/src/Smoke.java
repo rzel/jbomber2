@@ -541,34 +541,22 @@ class Smoke {
     {
         public void actionPerformed(ActionEvent e)
         {
+            colorOverviewSlider.setColors(custom_gradient_cache);
+                    
             if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
             {
-                colorOverviewSlider.setColors(rainbowColors);
                 scalar_col = COLOR_RAINBOW;
             }
             else if (e.getActionCommand().equals("COLORMAP_GRAYSCALE"))
             {
-                colorOverviewSlider.setColors(grayScaleColors);
                 scalar_col = COLOR_BLACKWHITE;
             }
             else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
             {
-                colorOverviewSlider.setColors(rainbowColors);
-                colorOverviewSlider.setBanding(4);
                 scalar_col = COLOR_BANDS;
             }
             else if  (e.getActionCommand().equals("COLORMAP_CUSTOM"))
             {
-                Vector colors = new Vector();
-                int m = colortable.getRowCount();
-                
-                for (int i = 0; i < m; ++i) {
-                    colors.add((Color)colortable.getValueAt(i, 0));
-                }
-                
-                System.out.println(colors.size());
-                
-                colorOverviewSlider.setColors(colors);
                 scalar_col = COLOR_CUSTOM;
             }
             else if  (e.getActionCommand().equals("SIMULATION_ON"))
@@ -1019,7 +1007,7 @@ class Smoke {
 			}
 		}
 
-    private JSliderlessSlider colorOverviewSlider = new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255);
+    private JSliderlessSlider colorOverviewSlider = new JSliderlessSlider(new DefaultBoundedRangeModel(), custom_gradient_cache, 255);
     private JComponent initOptionPanel(JFrame frame)
     {
         JTabbedPane tabPane = new JTabbedPane();
@@ -1032,13 +1020,17 @@ class Smoke {
 				optionPanel.add(initScalingSelectPanel());
         optionPanel.add(initColorMapSelectPanel(frame));
         optionPanel.add(initSmokeSelectPanel());
-	optionPanel.add(initCustomColorPanel(frame));
+        
+        JPanel colorOverviewPanel = new JPanel();
+        colorOverviewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        colorOverviewPanel.setLayout(new BoxLayout(colorOverviewPanel, BoxLayout.Y_AXIS));
+        colorOverviewPanel.setBorder(new TitledBorder("Colormap overview:"));
         colorOverviewSlider.setMinimum(0);
         colorOverviewSlider.setMaximum(1);
-        optionPanel.add(colorOverviewSlider);
+        colorOverviewPanel.add(colorOverviewSlider);
+        optionPanel.add(colorOverviewPanel);
+        
         optionPanel.add(initSimParamsPanel());
-        optionPanel.add(new JSliderlessSlider(new DefaultBoundedRangeModel(), rainbowColors, 255));
-				optionPanel.add(initSimParamsPanel());
 
         tabPane.addTab("Colors", optionPanel);
 
