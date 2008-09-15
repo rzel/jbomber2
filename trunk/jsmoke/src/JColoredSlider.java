@@ -143,10 +143,10 @@ class JHueSlider extends JColoredSlider
 
 class JSliderlessSlider extends JColoredSlider
 {
-    private Vector colors;
+    private float[][] colors;
     private int banding;
     
-  public JSliderlessSlider(BoundedRangeModel brm, Vector colors, int banding)
+  public JSliderlessSlider(BoundedRangeModel brm, float[][] colors, int banding)
   {
     super();
     this.colors = colors;
@@ -178,7 +178,7 @@ class JSliderlessSlider extends JColoredSlider
     super(orientation, min, max, value);
   }
 
-  public void setColors(Vector colors) {
+  public void setColors(float[][] colors) {
     this.colors = colors;
     repaint();
   }
@@ -198,11 +198,13 @@ class JSliderlessSlider extends JColoredSlider
     g.fillRect(0,0,(int)width,(int)height);
     
     float k = 0;
-    for(int i = 0; i < colors.size() - 1; ++i) {
-        GradientPaint gp = new GradientPaint(k, 0, (Color)colors.get(i), k + width/colors.size(), height, (Color)colors.get(i + 1));
+    for(int i = 0; i < colors.length - 1; ++i) {
+        Color color1 = new Color(colors[i][0], colors[i][1], colors[i][2]);
+        Color color2 = new Color(colors[i + 1][0], colors[i + 1][1], colors[i + 1][2]);
+        GradientPaint gp = new GradientPaint(k, 0, color1, k + width/colors.length, height, color2);
         g.setPaint(gp);
-        g.fillRect((int)k, 0, (int)k + getWidth()/colors.size(), (int)height);
-        k += getWidth()/colors.size();
+        g.fillRect((int)k, 0, (int)k + getWidth()/colors.length + 1, (int)height);
+        k += getWidth()/colors.length;
     }
     
     g.setColor(Color.BLACK);
