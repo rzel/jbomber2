@@ -1,14 +1,14 @@
 
-Java (TM) Binding for the OpenGL (r) API, version 1.1.1-rc3
+Java (TM) Binding for the OpenGL (r) API, version 1.1.2-pre-20080523
 -------------------------------------------------------
 
 This software is licensed by Sun Microsystems, as specified
-in the LICENSE-JOGL-1.1.1-rc3.txt file.  You must use this software 
+in the LICENSE-JOGL-1.1.2-pre-20080523.txt file.  You must use this software 
 in accordance with the terms under which the code is licensed.
 
 
 
-Instructions for unzipping Java Binding for the OpenGL API, version 1.1.1-rc3
+Instructions for unzipping Java Binding for the OpenGL API, version 1.1.2-pre-20080523
 --------------------------------------------------------------------
 
 After downloading and unzipping the zip file containing the 
@@ -16,7 +16,7 @@ JOGL release for your target platform, you will see the
 following files in the top directory:
   
   COPYRIGHT.txt
-  LICENSE-JOGL-1.1.1-rc3.txt
+  LICENSE-JOGL-1.1.2-pre-20080523.txt
   Userguide.html
   README.txt                  README file (you are reading it now)
 
