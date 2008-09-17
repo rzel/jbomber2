@@ -24,11 +24,12 @@ import javax.swing.table.*;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
+import java.nio.FloatBuffer;
+import com.sun.opengl.util.*;
 
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
  *        the velocity field at the mouse location. Press the indicated keys to change options
  */
-
 class Smoke {
     static RFFTWLibrary RFFTW = (RFFTWLibrary)Native.loadLibrary("rfftw",RFFTWLibrary.class);
 
@@ -50,9 +51,14 @@ class Smoke {
     float vec_scale = 1000;        //scaling of hedgehogs
     boolean   draw_smoke = true;  //draw the smoke or not
     boolean   draw_vecs = false;    //draw the vector field or not
-    final int COLOR_BLACKWHITE=0;  //different types of color mapping: black-and-white, rainbow, banded
+    final int COLOR_BLACKWHITE=0;  // different types of color mapping: black-and-white, rainbow, banded
     final int COLOR_RAINBOW=1;
-    final int COLOR_BANDS=2;
+    final int COLOR_BANDS=2;       // NOTE: This color map (COLOR_BANDS) is *BROKEN*, it claims to use a 7
+                                   //       level color banding (NLEVELS=7), but it actually produces 8
+                                   //       colors. This final two colors are orange and red, but this red
+                                   //       color is only present in a small percentage of nodes. This is
+                                   //       what causes the final color to turn red when ncolors becomes
+                                   //       small.
 		final int COLOR_CUSTOM=3;      // wtf enum?
     int   scalar_col = COLOR_CUSTOM;           //method for scalar coloring
     boolean frozen = false;         //toggles on/off the animation
@@ -64,9 +70,12 @@ class Smoke {
     final int SCALE_CLAMP = 1;
     final int SCALE_SCALE = 2;
     int scaleMode = SCALE_SCALE;
-    int ncolors = 16383;
+    int ncolors = 2047;
     double minClamp = 0.0d;
     double maxClamp = 1.0d;
+
+    boolean update_gradient_texture = true;
+    int[] textures = new int[1];
 
     static Vector rainbowColors = new Vector(Arrays.asList(new Color[]{Color.BLUE, new Color(0,255,255), Color.GREEN, Color.YELLOW, Color.RED}));
     static Vector grayScaleColors = new Vector(Arrays.asList(new Color[]{Color.WHITE, Color.BLACK}));
@@ -239,7 +248,7 @@ class Smoke {
 		private static float minvy=0.0f;
 		private static float minvy_lastframe=0.0f;
 
-		static float[][] custom_gradient_cache = new float[16384][3];
+		static float[][] custom_gradient_cache = new float[2048][3];
 		int custom_gradient_interpolate_mode = 0;
 		void generate_custom_gradient_cache() {
 			int n = colortable.getRowCount();
@@ -247,8 +256,8 @@ class Smoke {
 			Color a = null, b = null;
 			float[] a_cc, b_cc;
 			int cm = -1;
-			for(int k = 0; k < 16384; ++k) {
-				float f = (float)(k * 1.0/16384.0);
+			for(int k = 0; k < 2048; ++k) {
+				float f = (float)(k * 1.0/2048.0);
 				float r = (n-1) * f;
 				int m = (int)r;
 
@@ -303,25 +312,7 @@ class Smoke {
 					vy = (vy - minvy_lastframe) / (maxvy_lastframe - minvy_lastframe);
         }
 
-        // Band color count
-        vy *= ncolors + 1 ; vy = (int)vy ; vy /= ncolors;
-
-        if (scalar_col==COLOR_BLACKWHITE)
-            rgb[0]=rgb[1]=rgb[2] = vy;
-        else if (scalar_col==COLOR_RAINBOW)
-            rainbow(vy,rgb);
-        else if (scalar_col==COLOR_BANDS) {
-            final int NLEVELS = 7;
-            vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
-            rainbow(vy,rgb);
-        }
-				else if(scalar_col==COLOR_CUSTOM) {
-					int v = (int)(vy*16383 + 0.5);
-					v = v < 0 ? 0 : v > 16383 ? 16383 : v;
-					rgb = custom_gradient_cache[v];
-				}
-
-        gl.glColor3f(rgb[0], rgb[1], rgb[2]);
+				gl.glTexCoord1f(vy * texture_fill);
     }
 
 
@@ -405,7 +396,8 @@ class Smoke {
             for (i = 0; i < DIM; i++)
                 for (j = 0; j < DIM; j++) {
                 idx = (j * DIM) + i;
-                direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
+                //direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
+                set_colormap(gl, getDatasetColor(idx));
                 gl.glVertex2d(wn + i * wn, hn + j * hn);
                 gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
                 }
@@ -550,13 +542,13 @@ class Smoke {
     class ColorSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
-        {                   
+        {
             if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
             {
                 scalar_col = COLOR_RAINBOW;
-                
-                float[][] colors = new float[16384][3];
-                
+
+                float[][] colors = new float[2048][3];
+
                 for(int i = 0; i < colors.length; ++i) {
                     rainbow(i / (float)colors.length, colors[i]);
                 }
@@ -565,9 +557,9 @@ class Smoke {
             else if (e.getActionCommand().equals("COLORMAP_GRAYSCALE"))
             {
                 scalar_col = COLOR_BLACKWHITE;
-                
-                float[][] colors = new float[16384][3];
-                
+
+                float[][] colors = new float[2048][3];
+
                 for(int i = 0; i < colors.length; ++i) {
                     colors[i][0] = colors[i][1] = colors[i][2] = i / (float)colors.length;
                 }
@@ -576,12 +568,12 @@ class Smoke {
             else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
             {
                 scalar_col = COLOR_BANDS;
-                
-                float[][] colors = new float[16384][3];
-                final int NLEVELS = 7;           
-                
+
+                float[][] colors = new float[2048][3];
+                final int NLEVELS = 7;
+
                 for(int i = 0; i < colors.length; ++i) {
-                    float vy = i / (float)colors.length;
+                    float vy = (float)(i / (double)(colors.length - 1));
                     vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
                     rainbow(vy, colors[i]);
                 }
@@ -605,6 +597,7 @@ class Smoke {
             {
                 System.out.println("Colormap: " + e.getActionCommand());
             }
+            update_gradient_texture = true;
         }
     }
 
@@ -744,7 +737,7 @@ class Smoke {
         return onoffpanel;
 		}
 
-    JLabel colorCountLabel = new JLabel("Limit colors to 16383");
+    JLabel colorCountLabel = new JLabel("Limit colors to 2047");
 		JSlider colorCountSlider;
     private JPanel initScalingSelectPanel() {
         JCheckBox clampButton = new JCheckBox("clamping");
@@ -758,7 +751,7 @@ class Smoke {
         scaleButton.addActionListener(new ScaleSelectListener());
         scaleButton.setSelected(true);
 
-        colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 16383, 16383);
+        colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 2047, 2047);
         colorCountSlider.addChangeListener(new CustomColorPanelHandler());
 
         JPanel clampSelectPanel = new JPanel();
@@ -1034,38 +1027,38 @@ class Smoke {
 					((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
 					colortable.changeSelection(row, 0, false, false);
 					colorCountSlider.setMinimum(colortable.getRowCount() - 1);
-					generate_custom_gradient_cache();
 				}
 				else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
 					int row = colortable.getSelectedRow();
 					((DefaultTableModel)(colortable.getModel())).removeRow(row);
 					colorCountSlider.setMinimum(colortable.getRowCount() -1 );
-					generate_custom_gradient_cache();
 				}
 				else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
 					custom_gradient_interpolate_mode = 0;
-					generate_custom_gradient_cache();
 				}
 				else if (e.getActionCommand().equals("INTERPOLATE_HSV")) {
 					custom_gradient_interpolate_mode = 1;
-					generate_custom_gradient_cache();
 				}
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
 			}
+
 			public void stateChanged(ChangeEvent e) {
 				if (e.getSource().getClass().getName().equals("java.awt.Color")) {
 					int row = colortable.getSelectedRow();
 					int column = colortable.getSelectedColumn();
 					if(row>=0 && column>=0) {
 						colortable.setValueAt(e.getSource(), row, column);
-						generate_custom_gradient_cache();
 					}
 				}
-                                else if (e.getSource().getClass().getName().equals("javax.swing.JSlider")) {
-                                    int value = ((JSlider)e.getSource()).getValue();
-                                    colorCountLabel.setText("Limit colors to " + (value + 1));
-                                    ncolors = value;
-                                    colorOverviewSlider.setCount(ncolors);
-                                }
+				else if (e.getSource().getClass().getName().equals("javax.swing.JSlider")) {
+						int value = ((JSlider)e.getSource()).getValue();
+						colorCountLabel.setText("Limit colors to " + (value + 1));
+						ncolors = value;
+						colorOverviewSlider.setCount(ncolors);
+				}
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
 			}
 		}
 
@@ -1079,10 +1072,10 @@ class Smoke {
         colorOverviewSlider.setMinimum(0);
         colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
         colorOverviewSlider.setMajorTickSpacing(1);
-        colorOverviewSlider.setPaintTicks(true);             
+        colorOverviewSlider.setPaintTicks(true);
         colorOverviewSlider.setPaintLabels(true);
-        colorOverviewPanel.add(colorOverviewSlider);        
-        
+        colorOverviewPanel.add(colorOverviewSlider);
+
         JTabbedPane tabPane = new JTabbedPane();
 
         // Initialize option panel
@@ -1091,11 +1084,11 @@ class Smoke {
         optionPanel.add(initSimOnOffPanel());
         optionPanel.add(initDatasetSelectPanel());
 				optionPanel.add(initScalingSelectPanel());
-                                
+
         optionPanel.add(colorOverviewPanel);
         optionPanel.add(initColorMapSelectPanel(frame));
         optionPanel.add(initSmokeSelectPanel());
-        
+
         optionPanel.add(initSimParamsPanel());
 
         tabPane.addTab("Colors", optionPanel);
@@ -1153,17 +1146,75 @@ class Smoke {
         }
     }
 
-    class MyGLEventListener implements GLEventListener {
-        public void init(GLAutoDrawable drawable) {  }
+		int nextPowerOfTwo(int arg) {
+				int x = 1;
+				while (x < arg) x <<= 1;
+				return x;
+		}
 
-				private boolean setswapint = true;
+		float texture_fill = 1.0f;
+    class MyGLEventListener implements GLEventListener {
+        public void init(GLAutoDrawable drawable) {
+					GL gl = drawable.getGL();
+					gl.setSwapInterval(1); //Meh seems NOP in linux :(
+        }
+
         public void display(GLAutoDrawable drawable) {
             Smoke.this.do_one_simulation_step();
             GL gl = drawable.getGL();
-						if(setswapint) { //Meh seems NOP in linux :(
-							gl.setSwapInterval(1);
-							setswapint = false;
+
+						if(update_gradient_texture) {
+							gl.glEnable(gl.GL_TEXTURE_1D);
+							gl.glColor3f(1.0f, 1.0f, 1.0f);
+							int n = nextPowerOfTwo(ncolors + 1);
+							FloatBuffer texture_data = BufferUtil.newFloatBuffer(n*3);
+							boolean fixup = ncolors +1 != n;
+							for(int i = 0 ; i <= ncolors; ++i) {
+								double pos = (double)i/(double)ncolors;
+								int j = (int)(pos * 2047 + 0.5);
+
+								switch(scalar_col) {
+									case COLOR_BLACKWHITE: {
+										float c = (float)pos;
+										texture_data.put(c);
+										texture_data.put(c);
+										texture_data.put(c);
+										}; break;
+									case COLOR_RAINBOW: {
+										float[] c = new float[3];
+										rainbow( (float)pos, c);
+										texture_data.put(c);
+										}; break;
+									case COLOR_BANDS: {
+										float[] c = new float[3];
+										float vy = (float)pos;
+										final int NLEVELS = 7;
+										vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
+										rainbow( vy, c);
+										texture_data.put(c);
+										}; break;
+									case COLOR_CUSTOM:
+										texture_data.put(custom_gradient_cache[j]);
+										break;
+								}
+								if(i==ncolors && fixup) { //Fixup clamping of colors to texture
+									fixup = false;
+									--i;
+								}
+							}
+							texture_data.position(0);
+							texture_fill = (float)((ncolors+1)/(double)nextPowerOfTwo(ncolors + 1));
+							gl.glGenTextures(1, textures, 0);
+							gl.glBindTexture(GL.GL_TEXTURE_1D, textures[0]);
+							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
+							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP);
+							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP);
+							gl.glTexImage1D(GL.GL_TEXTURE_1D, 0, GL.GL_RGB, n, 0, GL.GL_RGB, GL.GL_FLOAT, texture_data);
+							update_gradient_texture = false;
 						}
+
+
             Smoke.this.display(gl);
             gl.glFlush();
         }
