@@ -12,7 +12,7 @@ ifeq ($(CLASSPATH),)
 	CLASSPATH:=.:..
 endif
 
-CLASSPATH:=$(CLASSPATH):/usr/share/bcel/lib/bcel.jar:$(shell pwd)/dist/lib/gluegen-rt.jar:$(shell pwd)/dist/lib/jna.jar:$(shell pwd)/dist/lib/jogl.jar:${CLASSDIR}
+CLASSPATH:=$(CLASSPATH):/usr/share/bcel/lib/bcel.jar:$(shell pwd)/lib/jogl/linux-i586/lib/gluegen-rt.jar:$(shell pwd)/lib/jna.jar:$(shell pwd)/lib/jogl/linux-i586/lib/jogl.jar:${CLASSDIR}
 SRCPATH  :=$(SRCDIR)
 
 LD_HACK :=LD_LIBRARY_PATH=../../lib/:../../lib/jogl/linux-i586/lib/
