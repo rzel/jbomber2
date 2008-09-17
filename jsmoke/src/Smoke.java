@@ -304,7 +304,7 @@ class Smoke {
         }
 
         // Band color count
-        vy *= ncolors ; vy = (int)(vy + .5); vy /= ncolors;
+        vy *= ncolors + 1 ; vy = (int)vy ; vy /= ncolors;
 
         if (scalar_col==COLOR_BLACKWHITE)
             rgb[0]=rgb[1]=rgb[2] = vy;
