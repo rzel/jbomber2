@@ -1,3 +1,4 @@
+import com.sun.opengl.util.texture.*;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import java.awt.BorderLayout;
@@ -1218,22 +1219,11 @@ class Smoke {
         public void init(GLAutoDrawable drawable) {
 					GL gl = drawable.getGL();
 					gl.setSwapInterval(1); //Meh seems NOP in linux :(
+                                        gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE_MINUS_SRC_ALPHA);
 
 					/* Load static textures */
 					try {
-						BufferedImage image = null;
-						image=(BufferedImage)ImageIO.read(new File("arrow.png"));
-						System.out.println(image.getWidth() + "x" + image.getHeight());
-						byte[] barray = new byte[image.getWidth() * image.getHeight() * 4];
-						System.out.print("efEREEEE");
-						int[]  iarray = image.getRGB(0,0,image.getWidth(), image.getHeight(), null, 0, image.getWidth() * 4);
-						System.out.print("fwefew");
-						for(int i = 0; i < image.getWidth() * image.getHeight() * 4 ; ++i ) {
-							barray[i] = (byte)iarray[i];
-						}
-						System.out.print("SADSAD");
-						ByteBuffer buffer = ByteBuffer.wrap(barray);
-						textures[1] = createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
+                				textures[1] = loadTexture("arrow.png").getTextureObject();
 
 					}
 					catch (Exception ex) {
@@ -1244,6 +1234,19 @@ class Smoke {
 					}
 				}
 
+        public Texture loadTexture(String fileName) {
+            Texture text = null;
+            try{
+                text = TextureIO.newTexture(new File(fileName), false);
+                text.setTexParameteri(GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
+                text.setTexParameteri(GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+            }catch(Exception e){
+                System.out.println(e.getMessage());
+                System.out.println("Error loading texture " + fileName);
+            }
+            return text;
+        }
+        
         public void display(GLAutoDrawable drawable) {
             Smoke.this.do_one_simulation_step();
             GL gl = drawable.getGL();
