@@ -24,8 +24,11 @@ import javax.swing.table.*;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
-import java.nio.FloatBuffer;
+import java.nio.*;
 import com.sun.opengl.util.*;
+import javax.imageio.*;
+import java.awt.image.*;
+import java.io.*;
 
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
  *        the velocity field at the mouse location. Press the indicated keys to change options
@@ -75,7 +78,7 @@ class Smoke {
     double maxClamp = 1.0d;
 
     boolean update_gradient_texture = true;
-    int[] textures = new int[1];
+    int[] textures = new int[2];
 
     static Vector rainbowColors = new Vector(Arrays.asList(new Color[]{Color.BLUE, new Color(0,255,255), Color.GREEN, Color.YELLOW, Color.RED}));
     static Vector grayScaleColors = new Vector(Arrays.asList(new Color[]{Color.WHITE, Color.BLACK}));
@@ -1152,12 +1155,56 @@ class Smoke {
 				return x;
 		}
 
+		int createTextureFromBuffer(GL gl, Buffer buffer, int ncomponents, int color_type, int dimensions, int width, int height) {
+			int[] t = new int[1];
+			int old_texid = -1;
+
+			gl.glGenTextures(1, t, 0);
+			int texid = t[0];
+			gl.glBindTexture(dimensions, texid);
+			gl.glTexParameteri(dimensions, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
+			gl.glTexParameteri(dimensions, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+			gl.glTexParameteri(dimensions, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP);
+			gl.glTexParameteri(dimensions, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP);
+			buffer.position(0);
+			if(dimensions == gl.GL_TEXTURE_1D) {
+				gl.glTexImage1D(dimensions, 0, ncomponents, width*height, 0, GL.GL_RGB, color_type, buffer);
+			}
+			else {
+				gl.glTexImage2D(dimensions, 0, ncomponents, width, height, 0, GL.GL_RGB, color_type, buffer);
+			}
+			return texid;
+		}
+
 		float texture_fill = 1.0f;
     class MyGLEventListener implements GLEventListener {
         public void init(GLAutoDrawable drawable) {
 					GL gl = drawable.getGL();
 					gl.setSwapInterval(1); //Meh seems NOP in linux :(
-        }
+
+					/* Load static textures */
+					try {
+						BufferedImage image = null;
+						image=(BufferedImage)ImageIO.read(new File("arrow.png"));
+						System.out.println(image.getWidth() + "x" + image.getHeight());
+						byte[] barray = new byte[image.getWidth() * image.getHeight() * 4];
+						System.out.print("efEREEEE");
+						int[]  iarray = image.getRGB(0,0,image.getWidth(), image.getHeight(), null, 0, image.getWidth() * 4);
+						System.out.print("fwefew");
+						for(int i = 0; i < image.getWidth() * image.getHeight() * 4 ; ++i ) {
+							barray[i] = (byte)iarray[i];
+						}
+						System.out.print("SADSAD");
+						ByteBuffer buffer = ByteBuffer.wrap(barray);
+						createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
+					}
+					catch (Exception ex) {
+						System.out.println("Error while loading textures:");
+						System.out.println(ex.getMessage() + " / " + ex.toString());
+						//ex.printStackTrace();
+						System.exit(1);
+					}
+				}
 
         public void display(GLAutoDrawable drawable) {
             Smoke.this.do_one_simulation_step();
@@ -1202,15 +1249,8 @@ class Smoke {
 									--i;
 								}
 							}
-							texture_data.position(0);
+							createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
 							texture_fill = (float)((ncolors+1)/(double)nextPowerOfTwo(ncolors + 1));
-							gl.glGenTextures(1, textures, 0);
-							gl.glBindTexture(GL.GL_TEXTURE_1D, textures[0]);
-							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
-							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
-							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP);
-							gl.glTexParameteri(GL.GL_TEXTURE_1D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP);
-							gl.glTexImage1D(GL.GL_TEXTURE_1D, 0, GL.GL_RGB, n, 0, GL.GL_RGB, GL.GL_FLOAT, texture_data);
 							update_gradient_texture = false;
 						}
 
