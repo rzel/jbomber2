@@ -358,6 +358,10 @@ class Smoke {
         double/*fftw_real*/  wn = winWidth / (double)(DIM + 1);   // Grid cell width
         double/*fftw_real*/  hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
 
+				gl.glDisable(gl.GL_TEXTURE_2D);
+				gl.glEnable(gl.GL_TEXTURE_1D);
+				gl.glBindTexture(gl.GL_TEXTURE_1D, textures[0]);
+
         if (draw_smoke) {
             gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
             for (j = 0; j < DIM - 1; j++)			//draw smoke
@@ -406,6 +410,39 @@ class Smoke {
                 }
             gl.glEnd();
         }
+
+
+
+
+
+
+
+
+				//HACKERDEHHACLK
+				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[1]);
+				gl.glDisable(gl.GL_TEXTURE_1D);
+				gl.glEnable(gl.GL_TEXTURE_2D);
+				gl.glEnable(gl.GL_BLEND);
+				gl.glBegin(GL.GL_QUADS);
+					gl.glTexCoord2d(0.0, 0.0);
+					gl.glVertex2d(0.0, 0.0);
+
+					gl.glTexCoord2d(1.0, 0.0);
+					gl.glVertex2d(400.0, 0.0);
+
+					gl.glTexCoord2d(1.0, 1.0);
+					gl.glVertex2d(400.0, 400.0);
+
+					gl.glTexCoord2d(0.0, 1.0);
+					gl.glVertex2d(0.0, 400.0);
+				gl.glEnd();
+//*/
+
+
+
+
+
+
         gl.glFlush(); // forces all opengl commands to complete. Blocking!!
 				++avg_fc;
 				long current = System.nanoTime();
@@ -1196,7 +1233,8 @@ class Smoke {
 						}
 						System.out.print("SADSAD");
 						ByteBuffer buffer = ByteBuffer.wrap(barray);
-						createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
+						textures[1] = createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
+
 					}
 					catch (Exception ex) {
 						System.out.println("Error while loading textures:");
@@ -1249,7 +1287,7 @@ class Smoke {
 									--i;
 								}
 							}
-							createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
+							textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
 							texture_fill = (float)((ncolors+1)/(double)nextPowerOfTwo(ncolors + 1));
 							update_gradient_texture = false;
 						}
