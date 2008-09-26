@@ -202,7 +202,7 @@ class JSliderlessSlider extends JColoredSlider
     for(int i = 0; i < width; ++i) {
     	double pos = ((double)i) / width;
     	pos *= count + 1 ; pos = (int)pos ; pos /= count;
-    	int c = (int)(2047 * pos);
+    	int c = (int)((colors.length - 1) * pos);
     	g.setColor(new Color(colors[c][0], colors[c][1], colors[c][2]));
     	g.drawLine(i, 0, i, (int)height / 2);
     }

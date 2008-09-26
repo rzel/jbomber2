@@ -55,34 +55,11 @@ class Smoke {
     float vec_scale = 1000;        //scaling of hedgehogs
     boolean   draw_smoke = true;  //draw the smoke or not
     boolean   draw_vecs = false;    //draw the vector field or not
-    final int COLOR_BLACKWHITE=0;  // different types of color mapping: black-and-white, rainbow, banded
-    final int COLOR_RAINBOW=1;
-    final int COLOR_BANDS=2;       // NOTE: This color map (COLOR_BANDS) is *BROKEN*, it claims to use a 7
-                                   //       level color banding (NLEVELS=7), but it actually produces 8
-                                   //       colors. This final two colors are orange and red, but this red
-                                   //       color is only present in a small percentage of nodes. This is
-                                   //       what causes the final color to turn red when ncolors becomes
-                                   //       small.
-		final int COLOR_CUSTOM=3;      // wtf enum?
-    int   scalar_col = COLOR_CUSTOM;           //method for scalar coloring
     boolean frozen = false;         //toggles on/off the animation
-    final int DATASET_RHO = 0;
-    final int DATASET_F = 1;
-    final int DATASET_V = 2;
-    int dataset = 0;                // Rho |V| of|f|
-    final int SCALE_NONE = 0;
-    final int SCALE_CLAMP = 1;
-    final int SCALE_SCALE = 2;
-    int scaleMode = SCALE_SCALE;
-    int ncolors = 2047;
-    double minClamp = 0.0d;
-    double maxClamp = 1.0d;
-
-    boolean update_gradient_texture = true;
     int[] textures = new int[2];
-
-    static Vector rainbowColors = new Vector(Arrays.asList(new Color[]{Color.BLUE, new Color(0,255,255), Color.GREEN, Color.YELLOW, Color.RED}));
-    static Vector grayScaleColors = new Vector(Arrays.asList(new Color[]{Color.WHITE, Color.BLACK}));
+   
+    private ColormapSelectPanel smokeColormapSelectPanel;
+    private ColormapSelectPanel vectorColormapSelectPanel;
     //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
     /**init_simulation: Initialize simulation data structures as a function of the grid size 'n'.
@@ -237,86 +214,31 @@ class Smoke {
 //------ VISUALIZATION CODE STARTS HERE -----------------------------------------------------------------
 
 
-    //rainbow: Implements a color palette, mapping the scalar 'value' to a rainbow color RGB
-    void rainbow(float value,float[] color) {
-        final float dx=0.8f;
-        if (value<0) value=0; if (value>1) value=1;
-        value = (6-2*dx)*value+dx;
-        color[0] = Math.max(0.0f,(3-Math.abs(value-4)-Math.abs(value-5))/2);
-        color[1] = Math.max(0.0f,(4-Math.abs(value-2)-Math.abs(value-4))/2);
-        color[2] = Math.max(0.0f,(3-Math.abs(value-1)-Math.abs(value-2))/2);
-    }
+    private static float maxvy=1.0f;
+    private static float maxvy_lastframe=1.0f;
+    private static float minvy=0.0f;
+    private static float minvy_lastframe=0.0f;
 
-		private static float maxvy=1.0f;
-		private static float maxvy_lastframe=1.0f;
-		private static float minvy=0.0f;
-		private static float minvy_lastframe=0.0f;
-
-		static float[][] custom_gradient_cache = new float[2048][3];
-		int custom_gradient_interpolate_mode = 0;
-		void generate_custom_gradient_cache() {
-			int n = colortable.getRowCount();
-			ColorSpace cs = ((Color)colortable.getValueAt(0, 0)).getColorSpace(); // Assume all colors use the same color space
-			Color a = null, b = null;
-			float[] a_cc, b_cc;
-			int cm = -1;
-			for(int k = 0; k < 2048; ++k) {
-				float f = (float)(k * 1.0/2048.0);
-				float r = (n-1) * f;
-				int m = (int)r;
-
-				if(m != cm) {
-					a = (Color)colortable.getValueAt(m, 0);
-					b = (Color)colortable.getValueAt(Math.min(m+1, n-1), 0);
-					cm = m;
-				}
-
-				float h = r - m;
-				float l = 1 - h;
-
-				switch(custom_gradient_interpolate_mode) {
-					case 0: {
-						custom_gradient_cache[k][0] = (a.getRed()   * l + b.getRed()   * h) / 255.0f;
-						custom_gradient_cache[k][1] = (a.getGreen() * l + b.getGreen() * h) / 255.0f;
-						custom_gradient_cache[k][2] = (a.getBlue()  * l + b.getBlue()  * h) / 255.0f;
-					}; break;
-					case 1: {
-						a_cc = a.getColorComponents(null);
-						b_cc = b.getColorComponents(null);
-
-						a_cc = cs.toCIEXYZ(a_cc);
-						b_cc = cs.toCIEXYZ(b_cc);
-						a_cc[0] = (a_cc[0] * l + b_cc[0] * h);
-						a_cc[1] = (a_cc[1] * l + b_cc[1] * h);
-						a_cc[2] = (a_cc[2] * l + b_cc[2] * h);
-						a_cc = cs.fromCIEXYZ(a_cc);
-
-						float[] rgb = cs.toRGB(a_cc);
-						custom_gradient_cache[k][0] = a_cc[0];
-						custom_gradient_cache[k][1] = a_cc[1];
-						custom_gradient_cache[k][2] = a_cc[2];
-					}; break;
-				}
-			}
-		}
 
     //set_colormap: Sets three different types of colormaps
-    void set_colormap(GL gl, float vy) {
+    void set_colormap(GL gl, float vy, ColormapSelectPanel panel) {
         float[] rgb = new float[3];
 
         // Clamp
-        if ((scaleMode & SCALE_CLAMP) == SCALE_CLAMP) {
+        if ((panel.getScalemode() & ColormapSelectPanel.SCALE_CLAMP) == ColormapSelectPanel.SCALE_CLAMP) {
+            double minClamp = panel.getMinClamp();
+            double maxClamp = panel.getMaxClamp();
             vy = (float)(vy<minClamp ? minClamp : vy>maxClamp ? maxClamp : vy); // Clamp!
         }
 
         maxvy = vy > maxvy ? vy : maxvy;
         minvy = vy < minvy ? vy : minvy;
 
-        if ((scaleMode & SCALE_SCALE) == SCALE_SCALE) {
-					vy = (vy - minvy_lastframe) / (maxvy_lastframe - minvy_lastframe);
+        if ((panel.getScalemode() & ColormapSelectPanel.SCALE_SCALE) == ColormapSelectPanel.SCALE_SCALE) {
+            vy = (vy - minvy_lastframe) / (maxvy_lastframe - minvy_lastframe);
         }
 
-				gl.glTexCoord1f(vy * texture_fill);
+	gl.glTexCoord1f(vy * texture_fill);
     }
 
 
@@ -340,13 +262,13 @@ class Smoke {
         gl.glColor3f(r,g,b);
     }
 
-    private float getDatasetColor(int idx) {
-         switch (dataset) {
-            case DATASET_RHO:
+    private float getDatasetColor(int idx, ColormapSelectPanel panel) {
+        switch (panel.getDataset()) {
+            case ColormapSelectPanel.DATASET_RHO:
                 return (float)rho[idx];
-            case DATASET_F:
+            case ColormapSelectPanel.DATASET_F:
                 return (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]) * DIM;
-            case DATASET_V:
+            case ColormapSelectPanel.DATASET_V:
                 return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
         }
 
@@ -373,7 +295,7 @@ class Smoke {
                 px = wn + (float)i * wn;
                 py = hn + (float)j * hn;
                 idx = (j * DIM) + i;
-                set_colormap(gl, getDatasetColor(idx));
+                set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
                 gl.glVertex2d(px,py);
 
                 for (i = 0; i < DIM - 1; i++) {
@@ -381,19 +303,19 @@ class Smoke {
                     py = hn + (j + 1) * hn;
                     idx = ((j + 1) * DIM) + i;
 
-                    set_colormap(gl, getDatasetColor(idx));
+                    set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
                     gl.glVertex2d(px, py);
                     px = wn + (i + 1) * wn;
                     py = hn + j * hn;
                     idx = (j * DIM) + (i + 1);
-                    set_colormap(gl, getDatasetColor(idx));
+                    set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
                     gl.glVertex2d(px, py);
                 }
 
                 px = wn + (float)(DIM - 1) * wn;
                 py = hn + (float)(j + 1) * hn;
                 idx = ((j + 1) * DIM) + (DIM - 1);
-                set_colormap(gl, getDatasetColor(idx));
+                set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
                 gl.glVertex2d(px, py);
                 gl.glEnd();
             }
@@ -405,7 +327,7 @@ class Smoke {
                 for (j = 0; j < DIM; j++) {
                 idx = (j * DIM) + i;
                 //direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
-                set_colormap(gl, getDatasetColor(idx));
+                set_colormap(gl, getDatasetColor(idx, vectorColormapSelectPanel), vectorColormapSelectPanel);
                 gl.glVertex2d(wn + i * wn, hn + j * hn);
                 gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
                 }
@@ -454,7 +376,7 @@ class Smoke {
 					avg_begin = current;
 					avg_fc_prev = avg_fc;
 					avg_fc = 0;
-                                        colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
+// TODO                                        colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
 				}
 
 				maxvy_lastframe = maxvy;
@@ -501,20 +423,9 @@ class Smoke {
 //keyboard: Handle key presses
     void keyboard(char key, int x, int y) {
         switch (key) {
-            case 't': dt -= 0.001; break;
-            case 'T': dt += 0.001; break;
             case 'c': color_dir = 1 - color_dir; break;
             case 'S': vec_scale *= 1.2; break;
             case 's': vec_scale *= 0.8; break;
-            case 'V': visc *= 5; break;
-            case 'v': visc *= 0.2; break;
-            case 'x': draw_smoke = !draw_smoke;
-            if (!draw_smoke) draw_vecs = true; break;
-            case 'y': draw_vecs = !draw_vecs;
-            if (!draw_vecs) draw_smoke = true; break;
-            case 'm': scalar_col++; if (scalar_col>COLOR_CUSTOM) scalar_col=COLOR_BLACKWHITE; break;
-            case 'a': frozen = !frozen; break;
-            case 'q': System.exit(0);
         }
     }
 
@@ -557,91 +468,6 @@ class Smoke {
         new Smoke();
     }
 
-    class DatasetSelectorListener implements ActionListener
-    {
-        public void actionPerformed(ActionEvent e)
-        {
-            if (e.getActionCommand().equals("DATASET_RHO"))
-            {
-                dataset = DATASET_RHO;
-            }
-            else if (e.getActionCommand().equals("DATASET_F"))
-            {
-                dataset = DATASET_F;
-            }
-            else if  (e.getActionCommand().equals("DATASET_V"))
-            {
-                dataset = DATASET_V;
-            }
-            else
-            {
-                System.out.println("Dataset: " + e.getActionCommand());
-            }
-        }
-    }
-
-    class ColorSelectorListener implements ActionListener
-    {
-        public void actionPerformed(ActionEvent e)
-        {
-            if (e.getActionCommand().equals("COLORMAP_RAINBOW"))
-            {
-                scalar_col = COLOR_RAINBOW;
-
-                float[][] colors = new float[2048][3];
-
-                for(int i = 0; i < colors.length; ++i) {
-                    rainbow(i / (float)colors.length, colors[i]);
-                }
-                colorOverviewSlider.setColors(colors, ncolors);
-            }
-            else if (e.getActionCommand().equals("COLORMAP_GRAYSCALE"))
-            {
-                scalar_col = COLOR_BLACKWHITE;
-
-                float[][] colors = new float[2048][3];
-
-                for(int i = 0; i < colors.length; ++i) {
-                    colors[i][0] = colors[i][1] = colors[i][2] = i / (float)colors.length;
-                }
-                colorOverviewSlider.setColors(colors, ncolors);
-            }
-            else if  (e.getActionCommand().equals("COLORMAP_DEFINED"))
-            {
-                scalar_col = COLOR_BANDS;
-
-                float[][] colors = new float[2048][3];
-                final int NLEVELS = 7;
-
-                for(int i = 0; i < colors.length; ++i) {
-                    float vy = (float)(i / (double)(colors.length - 1));
-                    vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
-                    rainbow(vy, colors[i]);
-                }
-                colorOverviewSlider.setColors(colors, ncolors);
-            }
-            else if  (e.getActionCommand().equals("COLORMAP_CUSTOM"))
-            {
-                scalar_col = COLOR_CUSTOM;
-                colorOverviewSlider.setColors(custom_gradient_cache, ncolors);
-            }
-            else if  (e.getActionCommand().equals("SIMULATION_ON"))
-            {
-                frozen = false;
-                do_one_simulation_step();
-            }
-            else if  (e.getActionCommand().equals("SIMULATION_OFF"))
-            {
-                frozen = true;
-            }
-            else
-            {
-                System.out.println("Colormap: " + e.getActionCommand());
-            }
-            update_gradient_texture = true;
-        }
-    }
-
     class SmokeSelectorListener implements ActionListener
     {
         public void actionPerformed(ActionEvent e)
@@ -661,109 +487,24 @@ class Smoke {
         }
     }
 
-    private JPanel initDatasetSelectPanel() {
-        JRadioButton rhoButton = new JRadioButton("rho");
-        rhoButton.setMnemonic(KeyEvent.VK_R);
-        rhoButton.setActionCommand("DATASET_RHO");
-        rhoButton.setSelected(true);
-        dataset = DATASET_RHO;
-        rhoButton.addActionListener(new DatasetSelectorListener());
-
-        JRadioButton fButton = new JRadioButton("|f|");
-        fButton.setMnemonic(KeyEvent.VK_F);
-        fButton.setActionCommand("DATASET_F");
-        fButton.addActionListener(new DatasetSelectorListener());
-
-        JRadioButton vButton = new JRadioButton("|v|");
-        vButton.setMnemonic(KeyEvent.VK_V);
-        vButton.setActionCommand("DATASET_V");
-        vButton.addActionListener(new DatasetSelectorListener());
-
-        ButtonGroup datasetSelectGroup = new ButtonGroup();
-        datasetSelectGroup.add(rhoButton);
-        datasetSelectGroup.add(fButton);
-        datasetSelectGroup.add(vButton);
-
-        JPanel datasetSelectPanel = new JPanel();
-        datasetSelectPanel.setLayout(new BoxLayout(datasetSelectPanel, BoxLayout.X_AXIS));
-        datasetSelectPanel.setBorder(new TitledBorder("Dataset"));
-        datasetSelectPanel.add(rhoButton);
-        datasetSelectPanel.add(fButton);
-        datasetSelectPanel.add(vButton);
-        datasetSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return datasetSelectPanel;
-    }
-
-    private JPanel initColorMapSelectPanel(JFrame frame) {
-        // Initialize colormap selection
-        JRadioButton rainbowButton = new JRadioButton("Rainbow");
-        rainbowButton.setMnemonic(KeyEvent.VK_R);
-        rainbowButton.setActionCommand("COLORMAP_RAINBOW");
-        rainbowButton.addActionListener(new ColorSelectorListener());
-
-        JRadioButton grayscaleButton = new JRadioButton("Grayscale");
-        grayscaleButton.setMnemonic(KeyEvent.VK_G);
-        grayscaleButton.setActionCommand("COLORMAP_GRAYSCALE");
-        grayscaleButton.addActionListener(new ColorSelectorListener());
-
-        JRadioButton definedButton   = new JRadioButton("Defined");
-        definedButton.setMnemonic(KeyEvent.VK_D);
-        definedButton.setActionCommand("COLORMAP_DEFINED");
-        definedButton.addActionListener(new ColorSelectorListener());
-
-        JRadioButton customButton   = new JRadioButton("Custom");
-        customButton.setMnemonic(KeyEvent.VK_C);
-        customButton.setActionCommand("COLORMAP_CUSTOM");
-        customButton.addActionListener(new ColorSelectorListener());
-
-        ButtonGroup colorMapSelectGroup = new ButtonGroup();
-        colorMapSelectGroup.add(rainbowButton);
-        colorMapSelectGroup.add(grayscaleButton);
-        colorMapSelectGroup.add(definedButton);
-        colorMapSelectGroup.add(customButton);
-
-        rainbowButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        grayscaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        definedButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        customButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JPanel colorMapSelectPanel = new JPanel();
-        colorMapSelectPanel.setLayout(new BoxLayout(colorMapSelectPanel, BoxLayout.Y_AXIS));
-        colorMapSelectPanel.setBorder(new TitledBorder("Colormaps"));
-
-        colorMapSelectPanel.add(rainbowButton);
-        colorMapSelectPanel.add(grayscaleButton);
-        colorMapSelectPanel.add(definedButton);
-        colorMapSelectPanel.add(customButton);
-
-        JPanel y = initCustomColorPanel(frame);
-        y.setBorder(new EmptyBorder(0,24,0,0));
-        y.setAlignmentX(Component.LEFT_ALIGNMENT);
-        colorMapSelectPanel.add(y);
-
-        customButton.setSelected(scalar_col == COLOR_CUSTOM);
-
-        rainbowButton.setSelected(scalar_col == COLOR_RAINBOW);
-
-        colorMapSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return colorMapSelectPanel;
-    }
-
-		private JPanel initSimOnOffPanel() {
-				JPanel onoffpanel = new JPanel();
+    private JPanel initSimOnOffPanel() {
+	JPanel onoffpanel = new JPanel();
         onoffpanel.setBorder(new TitledBorder("Simulation"));
         onoffpanel.setLayout(new BoxLayout(onoffpanel, BoxLayout.X_AXIS));
 
         JRadioButton simOnButton = new JRadioButton("On");
-        simOnButton.setMnemonic(KeyEvent.VK_N);
-        simOnButton.setActionCommand("SIMULATION_ON");
-        simOnButton.addActionListener(new ColorSelectorListener());
+        simOnButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                frozen = false;
+            }
+        });
 
         JRadioButton simOffButton = new JRadioButton("Off");
-        simOffButton.setMnemonic(KeyEvent.VK_F);
-        simOffButton.setActionCommand("SIMULATION_OFF");
-        simOffButton.addActionListener(new ColorSelectorListener());
-
+        simOffButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                frozen = true;
+            }
+        });
         ButtonGroup simOnOffGroup = new ButtonGroup();
         simOnOffGroup.add(simOnButton);
         simOnOffGroup.add(simOffButton);
@@ -776,143 +517,6 @@ class Smoke {
 
         onoffpanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return onoffpanel;
-		}
-
-    JLabel colorCountLabel = new JLabel("Limit colors to 2047");
-		JSlider colorCountSlider;
-    private JPanel initScalingSelectPanel() {
-        JCheckBox clampButton = new JCheckBox("clamping");
-        clampButton.setMnemonic(KeyEvent.VK_C);
-        clampButton.setActionCommand("SCALE_CLAMP");
-        clampButton.addActionListener(new ScaleSelectListener());
-
-        JCheckBox scaleButton = new JCheckBox("scaling");
-        scaleButton.setMnemonic(KeyEvent.VK_S);
-        scaleButton.setActionCommand("SCALE_SCALE");
-        scaleButton.addActionListener(new ScaleSelectListener());
-        scaleButton.setSelected(true);
-
-        colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 2047, 2047);
-        colorCountSlider.addChangeListener(new CustomColorPanelHandler());
-
-        JPanel clampSelectPanel = new JPanel();
-        clampSelectPanel.setLayout(new GridLayout(3,2));
-        clampSelectPanel.add(clampButton);
-        clampSelectPanel.add(new JLabel());
-        clampSelectPanel.add(new JLabel("Low: ", SwingConstants.RIGHT));
-        clampSelectPanel.add(new JSpinner(new MinClampSelectSpinnerModel(0.0d)));
-        clampSelectPanel.add(new JLabel("High: ", SwingConstants.RIGHT));
-        clampSelectPanel.add(new JSpinner(new MaxClampSelectSpinnerModel(1.0d)));
-
-        JPanel scaleSelectPanel = new JPanel();
-        scaleSelectPanel.setLayout(new BoxLayout(scaleSelectPanel, BoxLayout.Y_AXIS));
-        scaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        clampSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        colorCountLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        colorCountSlider.setAlignmentX(Component.LEFT_ALIGNMENT);
-        scaleSelectPanel.setBorder(new TitledBorder("Scaling:"));
-        scaleSelectPanel.add(scaleButton);
-        scaleSelectPanel.add(clampSelectPanel);
-        scaleSelectPanel.add(colorCountLabel);
-        scaleSelectPanel.add(colorCountSlider);
-        return scaleSelectPanel;
-
-
-    }
-
-    class MinClampSelectSpinnerModel implements SpinnerModel {
-        private Vector listeners = new Vector();
-
-        private double value = 0.0d;
-
-        public MinClampSelectSpinnerModel(double value) {
-            this.value = value;
-            minClamp = value;
-        }
-
-        public void removeChangeListener(ChangeListener listener) {
-            listeners.remove(listener);
-        }
-
-        public void addChangeListener(ChangeListener listener) {
-            listeners.add(listener);
-        }
-
-        public Object getPreviousValue() {
-            return new Double(value - 0.1d);
-        }
-
-        public Object getNextValue() {
-            return new Double(value + 0.1d);
-        }
-
-        public void setValue(Object value) {
-            this.value = ((Double)value).doubleValue();
-
-            for(int i = 0; i < listeners.size(); ++i) {
-                ChangeListener l = (ChangeListener)listeners.get(i);
-                l.stateChanged(new ChangeEvent(this));
-            }
-
-            minClamp = this.value;
-        }
-
-        public Object getValue() {
-            return new Double(value);
-        }
-    }
-
-    class MaxClampSelectSpinnerModel implements SpinnerModel {
-        private Vector listeners = new Vector();
-
-        private double value = 0.0d;
-
-        public MaxClampSelectSpinnerModel(double value) {
-            this.value = value;
-            maxClamp = value;
-        }
-
-        public void removeChangeListener(ChangeListener listener) {
-            listeners.remove(listener);
-        }
-
-        public void addChangeListener(ChangeListener listener) {
-            listeners.add(listener);
-        }
-
-        public Object getPreviousValue() {
-            return new Double(value - 0.1d);
-        }
-
-        public Object getNextValue() {
-            return new Double(value + 0.1d);
-        }
-
-        public void setValue(Object value) {
-            this.value = ((Double)value).doubleValue();
-
-            for(int i = 0; i < listeners.size(); ++i) {
-                ChangeListener l = (ChangeListener)listeners.get(i);
-                l.stateChanged(new ChangeEvent(this));
-            }
-
-            maxClamp = this.value;
-        }
-
-        public Object getValue() {
-            return new Double(value);
-        }
-    }
-
-    class ScaleSelectListener implements ActionListener {
-        public void actionPerformed(ActionEvent e) {
-            if (e.getActionCommand().equals("SCALE_CLAMP")) {
-                scaleMode ^= SCALE_CLAMP;
-            }
-            else if (e.getActionCommand().equals("SCALE_SCALE")) {
-                scaleMode ^= SCALE_SCALE;
-            }
-        }
     }
 
     private JPanel initSmokeSelectPanel()
@@ -937,7 +541,9 @@ class Smoke {
         smokeButton.setSelected(true);
         vectorButton.setSelected(false);
 
-				smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));
+	smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return smokeSelectPanel;
     }
 
@@ -970,171 +576,45 @@ class Smoke {
 			dimension.addChangeListener(new SimParamListener("DIMENSION"));
 			timestep.addChangeListener(new SimParamListener("TIMESTEP"));
 			viscosity.addChangeListener(new SimParamListener("VISCOSITY"));
-			simParamsPanel.add(new JLabel("Dimensions: "));
-			simParamsPanel.add(dimension);
-			simParamsPanel.add(new JLabel("Time-Step: "));
-			simParamsPanel.add(timestep);
-			simParamsPanel.add(new JLabel("Viscosity: "));
-			simParamsPanel.add(viscosity);
-			simParamsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+                        
+                        JPanel test = new JPanel();
+                        test.add(new JLabel("Dimensions: "));
+                        test.add(dimension);
+                        
+			test.add(new JLabel("Time-Step: "));
+			test.add(timestep);
+                        
+			test.add(new JLabel("Viscosity: "));
+			test.add(viscosity);
+                        
+                        test.setLayout(new GridLayout(3,2));
+			test.setAlignmentX(Component.LEFT_ALIGNMENT);
+                                                
+                        simParamsPanel.setLayout(new BoxLayout(simParamsPanel, BoxLayout.Y_AXIS));
+                        simParamsPanel.add(test);
 			return simParamsPanel;
 		}
 
-		protected ColorSelector colorselector;
-		ColorTable colortable;
-		private JPanel initCustomColorPanel(JFrame frame) {
-			colorselector = new ColorSelector(frame);
-			colorselector.addChangeListener(new CustomColorPanelHandler());
-
-			DefaultTableModel tablemodelcolors= new DefaultTableModel(1,1);
-
-			tablemodelcolors.addTableModelListener(new ColorTableTableModelListener());
-			colortable = new ColorTable(tablemodelcolors) {
-				private static final long serialVersionUID = 1L; // prevent warning
-				public Class getColumnClass(int column) { //enable JTable to use different renderers, eg Checkbox for Boolean
-					return getValueAt(0, column).getClass();
-				}
-			};
-			colortable.addMouseListener(new ColorTableRightClick(new CustomColorPanelHandler()));
-
-			colortable.getColumnModel().getColumn(colortable.convertColumnIndexToView(0)).setHeaderValue("Colors");
-			colortable.doLayout();
-
-			TableColumnModel cm = colortable.getColumnModel();
-			ColorTableRenderer r = new ColorTableRenderer();
-			TableColumn c = cm.getColumn(0);
-			c.setCellRenderer(r);
-
-			tablemodelcolors.setRowCount(0);
-			Object[] o = new Object[1];
-			o[0] = new Color(0,0,0);
-			tablemodelcolors.addRow(o);
-			o[0] = new Color(0,255,255);
-			tablemodelcolors.addRow(o);
-			o[0] = new Color(255,0,255);
-			tablemodelcolors.addRow(o);
-// 			o[0] = new Color(255,0,0);
-// 			tablemodelcolors.addRow(o);
-			colorCountSlider.setMinimum(colortable.getRowCount() - 1 );
-			generate_custom_gradient_cache();
-
-
-			JScrollPane scroll  = new JScrollPane(colortable);
-
-			JPanel panel = new JPanel();
-			panel.setBorder(new TitledBorder("Current gradient"));
-			BoxLayout panellayout = new BoxLayout(panel, BoxLayout.X_AXIS);
-			panel.setLayout(panellayout);
-
-			JRadioButton colorInterpolateModeRGB = new JRadioButton("Interpolate in RGB space");
-			JRadioButton colorInterpolateModeHSV = new JRadioButton("Interpolate in HSV space");
-			colorInterpolateModeRGB.setActionCommand("INTERPOLATE_RGB");
-			colorInterpolateModeHSV.setActionCommand("INTERPOLATE_HSV");
-			colorInterpolateModeRGB.addActionListener(new CustomColorPanelHandler());
-			colorInterpolateModeHSV.addActionListener(new CustomColorPanelHandler());
-			colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == 0);
-			colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == 0);
-			ButtonGroup colorInterpolateModeGroup = new ButtonGroup();
-			colorInterpolateModeGroup.add(colorInterpolateModeRGB);
-			colorInterpolateModeGroup.add(colorInterpolateModeHSV);
-			JPanel colorInterpolateModePanel = new JPanel();
-			colorInterpolateModePanel.setLayout(new BoxLayout(colorInterpolateModePanel, BoxLayout.Y_AXIS));
-			colorInterpolateModeRGB.setAlignmentX(Component.LEFT_ALIGNMENT);
-			colorInterpolateModeHSV.setAlignmentX(Component.LEFT_ALIGNMENT);
-			colorInterpolateModePanel.add(colorInterpolateModeRGB);
-			colorInterpolateModePanel.add(colorInterpolateModeHSV);
-			colorInterpolateModePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-			scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-			panel.add(colorInterpolateModePanel);
-			panel.add(scroll);
-			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			return panel;
-		}
-
-		class CustomColorPanelHandler implements ActionListener, ChangeListener {
-
-			public void actionPerformed(ActionEvent e) {
-				if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
-					int row = colortable.getSelectedRow();
-					int column = colortable.getSelectedColumn();
-					if(row>=0 && column>=0)
-						colorselector.setSelectedColor((Color)colortable.getValueAt(row, column));
-					colorselector.setVisible(true);
-				}
-				else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
-					int row = colortable.getSelectedRow();
-					Object[] o=new Object[1];
-					o[0]=new Color((int)(Math.random()*256), (int)(Math.random()*256), (int)(Math.random()*256));
-					((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
-					colortable.changeSelection(row, 0, false, false);
-					colorCountSlider.setMinimum(colortable.getRowCount() - 1);
-				}
-				else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
-					int row = colortable.getSelectedRow();
-					((DefaultTableModel)(colortable.getModel())).removeRow(row);
-					colorCountSlider.setMinimum(colortable.getRowCount() -1 );
-				}
-				else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
-					custom_gradient_interpolate_mode = 0;
-				}
-				else if (e.getActionCommand().equals("INTERPOLATE_HSV")) {
-					custom_gradient_interpolate_mode = 1;
-				}
-				generate_custom_gradient_cache();
-				update_gradient_texture = true;
-			}
-
-			public void stateChanged(ChangeEvent e) {
-				if (e.getSource().getClass().getName().equals("java.awt.Color")) {
-					int row = colortable.getSelectedRow();
-					int column = colortable.getSelectedColumn();
-					if(row>=0 && column>=0) {
-						colortable.setValueAt(e.getSource(), row, column);
-					}
-				}
-				else if (e.getSource().getClass().getName().equals("javax.swing.JSlider")) {
-						int value = ((JSlider)e.getSource()).getValue();
-						colorCountLabel.setText("Limit colors to " + (value + 1));
-						ncolors = value;
-						colorOverviewSlider.setCount(ncolors);
-				}
-				generate_custom_gradient_cache();
-				update_gradient_texture = true;
-			}
-		}
-
-    private JSliderlessSlider colorOverviewSlider = new JSliderlessSlider(new DefaultBoundedRangeModel(), custom_gradient_cache, 255);
-    private JComponent initOptionPanel(JFrame frame)
+        private JComponent initOptionPanel(JFrame frame)
     {
-        JPanel colorOverviewPanel = new JPanel();
-        colorOverviewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        colorOverviewPanel.setLayout(new BoxLayout(colorOverviewPanel, BoxLayout.Y_AXIS));
-        colorOverviewPanel.setBorder(new TitledBorder("Colormap preview:"));
-        colorOverviewSlider.setMinimum(0);
-        colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
-        colorOverviewSlider.setMajorTickSpacing(1);
-        colorOverviewSlider.setPaintTicks(true);
-        colorOverviewSlider.setPaintLabels(true);
-        colorOverviewPanel.add(colorOverviewSlider);
-
         JTabbedPane tabPane = new JTabbedPane();
 
         // Initialize option panel
-        JPanel optionPanel = new JPanel();
-        optionPanel.setLayout(new BoxLayout(optionPanel, BoxLayout.Y_AXIS));
-        optionPanel.add(initSimOnOffPanel());
-        optionPanel.add(initDatasetSelectPanel());
-				optionPanel.add(initScalingSelectPanel());
+        smokeColormapSelectPanel = new ColormapSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
+        tabPane.addTab("Smoke options", smokeColormapSelectPanel);
 
-        optionPanel.add(colorOverviewPanel);
-        optionPanel.add(initColorMapSelectPanel(frame));
-        optionPanel.add(initSmokeSelectPanel());
+        vectorColormapSelectPanel = new ColormapSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
+        tabPane.addTab("Vector options", vectorColormapSelectPanel);
 
-        optionPanel.add(initSimParamsPanel());
-
-        tabPane.addTab("Colors", optionPanel);
-
-			return tabPane;
+        JPanel SimulationOptionPanel = new JPanel();
+        SimulationOptionPanel.setLayout(new BoxLayout(SimulationOptionPanel, BoxLayout.Y_AXIS));
+        SimulationOptionPanel.add(initSimOnOffPanel());
+        SimulationOptionPanel.add(initSmokeSelectPanel());
+        SimulationOptionPanel.add(initSimParamsPanel());
+        tabPane.addTab("Simulation options", SimulationOptionPanel);
+        
+        tabPane.setSelectedIndex(0);
+        return tabPane;
     }
 
 	GLCanvas panel;
@@ -1238,8 +718,8 @@ class Smoke {
             Texture text = null;
             try{
                 text = TextureIO.newTexture(new File(fileName), false);
-                text.setTexParameteri(GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST);
-                text.setTexParameteri(GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST);
+                text.setTexParameteri(GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
+                text.setTexParameteri(GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
             }catch(Exception e){
                 System.out.println(e.getMessage());
                 System.out.println("Error loading texture " + fileName);
@@ -1251,7 +731,8 @@ class Smoke {
             Smoke.this.do_one_simulation_step();
             GL gl = drawable.getGL();
 
-						if(update_gradient_texture) {
+						if(smokeColormapSelectPanel.getUpdateGradientTexture()) {
+                                                        int ncolors = smokeColormapSelectPanel.getColorCount();
 							gl.glEnable(gl.GL_TEXTURE_1D);
 							gl.glColor3f(1.0f, 1.0f, 1.0f);
 							int n = nextPowerOfTwo(ncolors + 1);
@@ -1261,28 +742,28 @@ class Smoke {
 								double pos = (double)i/(double)ncolors;
 								int j = (int)(pos * 2047 + 0.5);
 
-								switch(scalar_col) {
-									case COLOR_BLACKWHITE: {
+								switch(smokeColormapSelectPanel.getColormap()) {
+									case ColormapSelectPanel.COLOR_GRAYSCALE: {
 										float c = (float)pos;
 										texture_data.put(c);
 										texture_data.put(c);
 										texture_data.put(c);
 										}; break;
-									case COLOR_RAINBOW: {
+									case ColormapSelectPanel.COLOR_RAINBOW: {
 										float[] c = new float[3];
-										rainbow( (float)pos, c);
+										ColormapSelectPanel.rainbow( (float)pos, c);
 										texture_data.put(c);
 										}; break;
-									case COLOR_BANDS: {
+									case ColormapSelectPanel.COLOR_DEFINED: {
 										float[] c = new float[3];
 										float vy = (float)pos;
 										final int NLEVELS = 7;
 										vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
-										rainbow( vy, c);
+										ColormapSelectPanel.rainbow( vy, c);
 										texture_data.put(c);
 										}; break;
-									case COLOR_CUSTOM:
-										texture_data.put(custom_gradient_cache[j]);
+									case ColormapSelectPanel.COLOR_CUSTOM:
+										texture_data.put(smokeColormapSelectPanel.getCustomGradient(j));
 										break;
 								}
 								if(i==ncolors && fixup) { //Fixup clamping of colors to texture
@@ -1292,7 +773,7 @@ class Smoke {
 							}
 							textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
 							texture_fill = (float)((ncolors+1)/(double)nextPowerOfTwo(ncolors + 1));
-							update_gradient_texture = false;
+							smokeColormapSelectPanel.setUpdateGradientTexture(true);
 						}
 
 
