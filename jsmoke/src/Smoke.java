@@ -673,7 +673,7 @@ class Smoke {
 				return x;
 		}
 
-		int createTextureFromBuffer(GL gl, Buffer buffer, int ncomponents, int color_type, int dimensions, int width, int height) {
+		int createTextureFromBuffer(GL gl, Buffer buffer, int internal_format, int pixel_format, int pixel_type, int dimensions, int width, int height) {
 			int[] t = new int[1];
 			int old_texid = -1;
 
@@ -686,10 +686,10 @@ class Smoke {
 			gl.glTexParameteri(dimensions, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP);
 			buffer.position(0);
 			if(dimensions == gl.GL_TEXTURE_1D) {
-				gl.glTexImage1D(dimensions, 0, ncomponents, width*height, 0, GL.GL_RGB, color_type, buffer);
+				gl.glTexImage1D(dimensions, 0, internal_format, width*height, 0, pixel_format, pixel_type, buffer);
 			}
 			else {
-				gl.glTexImage2D(dimensions, 0, ncomponents, width, height, 0, GL.GL_RGB, color_type, buffer);
+				gl.glTexImage2D(dimensions, 0, internal_format, width, height, 0, pixel_format, pixel_type, buffer);
 			}
 			return texid;
 		}
@@ -699,12 +699,25 @@ class Smoke {
         public void init(GLAutoDrawable drawable) {
 					GL gl = drawable.getGL();
 					gl.setSwapInterval(1); //Meh seems NOP in linux :(
-                                        gl.glBlendFunc(GL.GL_ONE, GL.GL_ONE_MINUS_SRC_ALPHA);
+					gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
 
 					/* Load static textures */
 					try {
-                				textures[1] = loadTexture("arrow.png").getTextureObject();
-
+						BufferedImage image = null;
+						image=(BufferedImage)ImageIO.read(new File("arrow.png"));
+						int[]  iarray = image.getRGB(0,0,image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+						for(int i = 0; i < image.getWidth() * image.getHeight() ; ++i ) {
+							int c = iarray[i];
+							int r = ((c >> 16) & 0xff);
+							int g = ((c >>  8) & 0xff);
+							int b = ((c >>  0) & 0xff);
+							int a = ((c >> 24) & 0xff);//*/
+							iarray[i] = (r << 24) | (g << 16) | (b<<8) | (a << 0);
+						}
+						IntBuffer buffer = IntBuffer.wrap(iarray);
+						textures[1] = createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
+						gl.glTexParameteri(gl.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
+						gl.glTexParameteri(gl.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
 					}
 					catch (Exception ex) {
 						System.out.println("Error while loading textures:");
@@ -726,7 +739,7 @@ class Smoke {
             }
             return text;
         }
-        
+
         public void display(GLAutoDrawable drawable) {
             Smoke.this.do_one_simulation_step();
             GL gl = drawable.getGL();
@@ -771,7 +784,7 @@ class Smoke {
 									--i;
 								}
 							}
-							textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
+							textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
 							texture_fill = (float)((ncolors+1)/(double)nextPowerOfTwo(ncolors + 1));
 							smokeColormapSelectPanel.setUpdateGradientTexture(true);
 						}
