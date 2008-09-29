@@ -4,7 +4,8 @@ CLASSDIR :=./build/classes
 JARDIR   :=./build/jar
 BUILDDIR :=./build
 
-JAVAFILES  :=$(shell ls $(SRCDIR)/*.java)
+#NOTE: Smoke.java must be compiled first or Jikes will b0rk for some obscure reason
+JAVAFILES  :=$(shell echo $(SRCDIR)/Smoke.java ; ls $(SRCDIR)/*.java | grep -v Smoke.java)
 CLASSFILES :=$(JAVAFILES:$(SRCDIR)/%.java=$(CLASSDIR)/%.class)
 MAKEFILES  :=Makefile Makefile.inc Makefile.config $(shell cat Makefile.inc 2> /dev/null | sed "s:-include ::")
 
