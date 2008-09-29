@@ -241,7 +241,7 @@ class Smoke {
             vy = (vy - minvy_lastframe) / (maxvy_lastframe - minvy_lastframe);
         }
 
-	gl.glTexCoord1f(vy * texture_fill);
+		gl.glTexCoord1f(vy * texture_fill);
     }
 
 
@@ -624,20 +624,20 @@ class Smoke {
 			dimension.addChangeListener(new SimParamListener("DIMENSION"));
 			timestep.addChangeListener(new SimParamListener("TIMESTEP"));
 			viscosity.addChangeListener(new SimParamListener("VISCOSITY"));
-                        
+
                         JPanel test = new JPanel();
                         test.add(new JLabel("Dimensions: "));
                         test.add(dimension);
-                        
+
 			test.add(new JLabel("Time-Step: "));
 			test.add(timestep);
-                        
+
 			test.add(new JLabel("Viscosity: "));
 			test.add(viscosity);
-                        
+
                         test.setLayout(new GridLayout(3,2));
 			test.setAlignmentX(Component.LEFT_ALIGNMENT);
-                                                
+
                         simParamsPanel.setLayout(new BoxLayout(simParamsPanel, BoxLayout.Y_AXIS));
                         simParamsPanel.add(test);
 			return simParamsPanel;
