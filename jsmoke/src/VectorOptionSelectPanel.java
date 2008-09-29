@@ -28,8 +28,8 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		optionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		vector_size         = new JSlider(1, 100, 24);
 		vector_scale_factor = new JSlider(1, 1000, 500);
-		vector_grid_x       = new JSlider(1, 256, 50);
-		vector_grid_y       = new JSlider(1, 256, 50);
+		vector_grid_x       = new JSlider(1, 256, 25);
+		vector_grid_y       = new JSlider(1, 256, 25);
 		vector_size.addChangeListener(new VectorOptionSelectPanelListener());
 		vector_scale_factor.addChangeListener(new VectorOptionSelectPanelListener());
 		vector_grid_x.addChangeListener(new VectorOptionSelectPanelListener());

@@ -585,10 +585,11 @@ class Smoke {
         smokeSelectPanel.add(smokeButton);
         smokeSelectPanel.add(vectorButton);
 
-        smokeButton.setSelected(true);
-        vectorButton.setSelected(false);
+        smokeButton.setSelected(false);
+        vectorButton.setSelected(true);
+        draw_smoke = false;
+        draw_vecs = true;
 
-        
         smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));
 	smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return smokeSelectPanel;
@@ -659,8 +660,8 @@ class Smoke {
         SimulationOptionPanel.add(initSmokeSelectPanel());
         SimulationOptionPanel.add(initSimParamsPanel());
         tabPane.addTab("Simulation options", SimulationOptionPanel);
-        
-        tabPane.setSelectedIndex(0);
+
+        tabPane.setSelectedIndex(1);
         return tabPane;
     }
 
