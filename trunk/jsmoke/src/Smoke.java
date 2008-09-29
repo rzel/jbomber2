@@ -55,11 +55,14 @@ class Smoke {
     float vec_scale = 1000;        //scaling of hedgehogs
     boolean   draw_smoke = true;  //draw the smoke or not
     boolean   draw_vecs = false;    //draw the vector field or not
+    static final int VECTOR_TYPE_HEDGEHOG = 0;
+    static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
+    int vector_type = VECTOR_TYPE_ARROW;
     boolean frozen = false;         //toggles on/off the animation
     int[] textures = new int[2];
-   
+
     private ColormapSelectPanel smokeColormapSelectPanel;
-    private ColormapSelectPanel vectorColormapSelectPanel;
+    private VectorOptionSelectPanel vectorOptionSelectPanel;
     //------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
     /**init_simulation: Initialize simulation data structures as a function of the grid size 'n'.
@@ -321,18 +324,62 @@ class Smoke {
             }
         }
 
-        if (draw_vecs) {
-            gl.glBegin(GL.GL_LINES);				//draw velocities
-            for (i = 0; i < DIM; i++)
-                for (j = 0; j < DIM; j++) {
-                idx = (j * DIM) + i;
-                //direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
-                set_colormap(gl, getDatasetColor(idx, vectorColormapSelectPanel), vectorColormapSelectPanel);
-                gl.glVertex2d(wn + i * wn, hn + j * hn);
-                gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
-                }
-            gl.glEnd();
-        }
+				if (draw_vecs) {
+					if(vector_type == VECTOR_TYPE_HEDGEHOG) {
+						gl.glBegin(GL.GL_LINES);				//draw velocities
+						for (i = 0; i < DIM; i++)
+								for (j = 0; j < DIM; j++) {
+								idx = (j * DIM) + i;
+								//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
+								set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
+								gl.glVertex2d(wn + i * wn, hn + j * hn);
+								gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
+								}
+						gl.glEnd();
+					}
+					else if(vector_type == VECTOR_TYPE_ARROW) {
+						gl.glBindTexture(gl.GL_TEXTURE_2D, textures[1]);
+						gl.glDisable(gl.GL_TEXTURE_1D);
+						gl.glEnable(gl.GL_TEXTURE_2D);
+						gl.glEnable(gl.GL_BLEND);
+						float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
+						float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
+						int gridx = vectorOptionSelectPanel.getVectorGridX();
+						int gridy = vectorOptionSelectPanel.getVectorGridY();
+						float spacex = (float)((winWidth  - 2*wn) / (gridx + 0.0f));
+						float spacey = (float)((winHeight - 2*hn) / (gridy + 0.0f));
+						gl.glPushMatrix();
+						gl.glTranslatef(winWidth/2.0f, winHeight/2.0f, 0);
+						for(int x = 0 ; x < gridx ; ++x) {
+							for(int y = 0 ; y < gridy ; ++y) {
+								idx = (int)((x/(float)gridx) * DIM + DIM * (int)(DIM * (y/(float)gridy)));
+								float vy = getDatasetColor(idx, vectorOptionSelectPanel);
+								float size = vector_size * vy * vector_scalefactor;
+								gl.glPushMatrix();
+								gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
+								                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
+								                0.0f);
+								gl.glRotatef(360.0f*vy, 0, 0, 1);
+								gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
+								gl.glTexCoord2d(0.0, 0.0);
+								gl.glVertex2d(-size, -size);
+
+								gl.glTexCoord2d(1.0, 0.0);
+								gl.glVertex2d(+size, -size);
+
+								gl.glTexCoord2d(1.0, 1.0);
+								gl.glVertex2d(+size, +size);
+
+								gl.glTexCoord2d(0.0, 1.0);
+								gl.glVertex2d(-size, +size);
+								gl.glEnd();
+
+								gl.glPopMatrix();
+							}
+						}
+						gl.glPopMatrix();
+					}
+			}
 
 
 
@@ -340,7 +387,7 @@ class Smoke {
 
 
 
-
+/*
 				//HACKERDEHHACLK
 				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[1]);
 				gl.glDisable(gl.GL_TEXTURE_1D);
@@ -358,7 +405,7 @@ class Smoke {
 
 					gl.glTexCoord2d(0.0, 1.0);
 					gl.glVertex2d(0.0, 400.0);
-				gl.glEnd();
+				gl.glEnd();*/
 //*/
 
 
@@ -603,8 +650,8 @@ class Smoke {
         smokeColormapSelectPanel = new ColormapSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
         tabPane.addTab("Smoke options", smokeColormapSelectPanel);
 
-        vectorColormapSelectPanel = new ColormapSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
-        tabPane.addTab("Vector options", vectorColormapSelectPanel);
+        vectorOptionSelectPanel = new VectorOptionSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
+        tabPane.addTab("Vector options", vectorOptionSelectPanel);
 
         JPanel SimulationOptionPanel = new JPanel();
         SimulationOptionPanel.setLayout(new BoxLayout(SimulationOptionPanel, BoxLayout.Y_AXIS));
