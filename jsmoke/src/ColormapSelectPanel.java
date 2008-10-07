@@ -9,107 +9,206 @@ import java.awt.color.*;
 
 import java.util.*;
 
-public class ColormapSelectPanel extends JPanel {
+public class ColormapSelectPanel extends JPanel implements ActionListener, ChangeListener {
     public static final int COLOR_RAINBOW   = 1;
     public static final int COLOR_GRAYSCALE = 2;
     public static final int COLOR_DEFINED   = 4;
     public static final int COLOR_CUSTOM    = 8;
-    
+
     public static final int DATASET_RHO = 1;
     public static final int DATASET_F   = 2;
     public static final int DATASET_V   = 4;
-    
+
     public static final int SCALE_CLAMP = 1;
     public static final int SCALE_SCALE = 2;
-    
+
     private JSliderlessSlider colorPreviewSlider;
     private int colorCount = 2047;
     private ColorTable colortable;
     private ColorSelector colorselector;
     private JLabel colorCountLabel;
     private JSlider colorCountSlider;
-    
+
     private int dataset   = DATASET_RHO;
     private int scalemode = SCALE_SCALE;
     private int colormap  = COLOR_CUSTOM;
 
     private boolean update_gradient_texture;
-    
+
     private UnboundedDoubleSpinnerModel minClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(0.0);
     private UnboundedDoubleSpinnerModel maxClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);    private static float[][] custom_gradient_cache = new float[2048][3];
     int custom_gradient_interpolate_mode = 0;
-    
+
     public ColormapSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
         add(initDatasetSelectPanel());
         add(initScalingSelectPanel());
         add(initColormapPreviewPanel());
-        add(initColormapSelectPanel(frame));   
-        
+        add(initColormapSelectPanel(frame));
+
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setAlignmentX(Component.LEFT_ALIGNMENT);     
-        
+        setAlignmentX(Component.LEFT_ALIGNMENT);
+
         updateColormap(minColor, maxColor, colorCount, colormap);
     }
-    
+
     public int getDataset() {
-        return dataset;
+         return dataset;
     }
-    
+
     public int getScalemode() {
-        return scalemode;
+         return scalemode;
     }
-    
+
     public double getMinClamp() {
-        return ((Double)minClampSelectSpinnerModel.getValue()).doubleValue();
+         return ((Double)minClampSelectSpinnerModel.getValue()).doubleValue();
     }
-    
+
     public double getMaxClamp() {
-        return ((Double)maxClampSelectSpinnerModel.getValue()).doubleValue();
+         return ((Double)maxClampSelectSpinnerModel.getValue()).doubleValue();
     }
-    
+
     public boolean getUpdateGradientTexture() {
-        return update_gradient_texture;
+         return update_gradient_texture;
     }
-    
+
     public void setUpdateGradientTexture(boolean value) {
-        update_gradient_texture = value;
+         update_gradient_texture = value;
     }
-    
+
     public int getColorCount() {
-        return colorCount;
+         return colorCount;
     }
-    
+
     public int getColormap() {
-        return colormap;
+         return colormap;
     }
-    
+
     public float[] getCustomGradient(int index) {
-        return custom_gradient_cache[index];
+         return custom_gradient_cache[index];
     }
-    
+
+		public void actionPerformed(ActionEvent e) {
+			     if(e.getActionCommand() == "SET_DATASET_RHO") {
+				dataset = DATASET_RHO;
+			}
+			else if(e.getActionCommand() == "SET_DATASET_F") {
+				dataset = DATASET_F;
+			}
+			else if(e.getActionCommand() == "SET_DATASET_V") {
+				dataset = DATASET_V;
+			}
+			else if(e.getActionCommand() == "SET_SCALE_CLAMP") {
+				scalemode ^= SCALE_CLAMP;
+			}
+			else if(e.getActionCommand() == "SET_SCALE_SCALE") {
+				scalemode ^= SCALE_SCALE;
+			}
+			else if(e.getActionCommand() == "SET_RAINBOW") {
+				float[][] colors = new float[2048][3];
+
+				for(int i = 0; i < colors.length; ++i) {
+					rainbow(i / (float)colors.length, colors[i]);
+				}
+				colormap = COLOR_RAINBOW;
+				colorPreviewSlider.setColors(colors, colorCount);
+			}
+			else if(e.getActionCommand() == "SET_GRAYSCALE") {
+				float[][] colors = new float[2048][3];
+
+				for(int i = 0; i < colors.length; ++i) {
+					colors[i][0] = colors[i][1] = colors[i][2] = i / (float)colors.length;
+				}
+				colormap = COLOR_GRAYSCALE;
+				colorPreviewSlider.setColors(colors, colorCount);
+			}
+			else if(e.getActionCommand() == "SET_DEFINED") {
+				float[][] colors = new float[2048][3];
+				final int NLEVELS = 7;
+
+				for(int i = 0; i < colors.length; ++i) {
+					float vy = (float)(i / (double)(colors.length - 1));
+					vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
+					rainbow(vy, colors[i]);
+				}
+				colormap = COLOR_DEFINED;
+				colorPreviewSlider.setColors(colors, colorCount);
+			}
+			else if(e.getActionCommand() == "SET_CUSTOM") {
+				colormap = COLOR_CUSTOM;
+				colorPreviewSlider.setColors(custom_gradient_cache, colorCount);
+			}
+			else if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
+				int row = colortable.getSelectedRow();
+				int column = colortable.getSelectedColumn();
+				if(row>=0 && column>=0)
+					colorselector.setSelectedColor((Color)colortable.getValueAt(row, column));
+				colorselector.setVisible(true);
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+			else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
+				int row = colortable.getSelectedRow();
+				Object[] o=new Object[1];
+				o[0]=new Color((int)(Math.random()*256), (int)(Math.random()*256), (int)(Math.random()*256));
+				((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
+				colortable.changeSelection(row, 0, false, false);
+				colorCountSlider.setMinimum(colortable.getRowCount() - 1);
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+			else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
+				int row = colortable.getSelectedRow();
+				((DefaultTableModel)(colortable.getModel())).removeRow(row);
+				colorCountSlider.setMinimum(colortable.getRowCount() -1 );
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+			else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
+				custom_gradient_interpolate_mode = 0;
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+			else if (e.getActionCommand().equals("INTERPOLATE_HSV")) {
+				custom_gradient_interpolate_mode = 1;
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+		}
+
+		public void stateChanged(ChangeEvent e) {
+			if(e.getSource() == colorCountSlider) {
+				int value = ((JSlider)e.getSource()).getValue();
+				colorCountLabel.setText("Limit colors to " + (value + 1));
+				colorCount = value;
+				colorPreviewSlider.setCount(colorCount);
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+			else if(e.getSource() ==colorselector ) {
+				int row = colortable.getSelectedRow();
+				int column = colortable.getSelectedColumn();
+				if(row>=0 && column>=0) {
+					colortable.setValueAt(e.getSource(), row, column);
+				}
+				generate_custom_gradient_cache();
+				update_gradient_texture = true;
+			}
+		}
+
     private JPanel initDatasetSelectPanel() {
         JRadioButton rhoButton = new JRadioButton("rho");
         rhoButton.setSelected(true);
-        rhoButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {                
-                dataset = DATASET_RHO;
-            }
-        });
+        rhoButton.addActionListener(this);
+				rhoButton.setActionCommand("SET_DATASET_RHO");
 
         JRadioButton fButton = new JRadioButton("|f|");
-        fButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {                
-                dataset = DATASET_F;
-            }
-        });
+        fButton.addActionListener(this);
+				fButton.setActionCommand("SET_DATASET_F");
 
-        JRadioButton vButton = new JRadioButton("|v|");
-        vButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {                
-                dataset = DATASET_V;
-            }
-        });
-        
+				JRadioButton vButton = new JRadioButton("|v|");
+				vButton.addActionListener(this);
+				vButton.setActionCommand("SET_DATASET_V");
+
         ButtonGroup datasetSelectGroup = new ButtonGroup();
         datasetSelectGroup.add(rhoButton);
         datasetSelectGroup.add(fButton);
@@ -125,38 +224,21 @@ public class ColormapSelectPanel extends JPanel {
         return datasetSelectPanel;
     }
 
-    private JPanel initScalingSelectPanel() {        
+    private JPanel initScalingSelectPanel() {
         JCheckBox clampButton = new JCheckBox("clamping");
         clampButton.setMnemonic(KeyEvent.VK_C);
-        clampButton.setActionCommand("SCALE_CLAMP");
-        clampButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                scalemode ^= SCALE_CLAMP;
-            }
-        });
+        clampButton.setActionCommand("SET_SCALE_CLAMP");
+        clampButton.addActionListener(this);
 
         JCheckBox scaleButton = new JCheckBox("scaling");
         scaleButton.setMnemonic(KeyEvent.VK_S);
-        scaleButton.setActionCommand("SCALE_SCALE");
+        scaleButton.setActionCommand("SET_SCALE_SCALE");
         scaleButton.setSelected(true);
-        scaleButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                scalemode ^= SCALE_SCALE;
-            }
-        });
+        scaleButton.addActionListener(this);
 
         colorCountLabel = new JLabel("Limit colors to 2047");
         colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 2047, 2047);
-        colorCountSlider.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {                
-                int value = ((JSlider)e.getSource()).getValue();
-                colorCountLabel.setText("Limit colors to " + (value + 1));
-                colorCount = value;
-                colorPreviewSlider.setCount(colorCount);
-                generate_custom_gradient_cache();
-                update_gradient_texture = true;
-            }
-        });
+        colorCountSlider.addChangeListener(this);
 
         JPanel clampSelectPanel = new JPanel();
         clampSelectPanel.setLayout(new GridLayout(3,2));
@@ -179,14 +261,14 @@ public class ColormapSelectPanel extends JPanel {
         scaleSelectPanel.add(colorCountLabel);
         scaleSelectPanel.add(colorCountSlider);
         return scaleSelectPanel;
-    }    
-    
-    private JPanel initColormapPreviewPanel() {    
+    }
+
+    private JPanel initColormapPreviewPanel() {
         colorPreviewSlider = new JSliderlessSlider(new DefaultBoundedRangeModel());
         colorPreviewSlider.setMajorTickSpacing(1);
         colorPreviewSlider.setPaintTicks(true);
         colorPreviewSlider.setPaintLabels(true);
-        
+
         JPanel colormapPreviewPanel = new JPanel();
         colormapPreviewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         colormapPreviewPanel.setLayout(new BoxLayout(colormapPreviewPanel, BoxLayout.Y_AXIS));
@@ -194,60 +276,25 @@ public class ColormapSelectPanel extends JPanel {
         colormapPreviewPanel.add(colorPreviewSlider);
         return colormapPreviewPanel;
     }
-    
+
     private JPanel initColormapSelectPanel(JFrame frame) {
        // Initialize colormap selection
         JRadioButton rainbowButton = new JRadioButton("Rainbow");
-        rainbowButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                float[][] colors = new float[2048][3];
-
-                for(int i = 0; i < colors.length; ++i) {
-                    rainbow(i / (float)colors.length, colors[i]);
-                }
-                colormap = COLOR_RAINBOW;
-                colorPreviewSlider.setColors(colors, colorCount);                
-            }
-        });
+        rainbowButton.addActionListener(this);
+				rainbowButton.setActionCommand("SET_RAINBOW");
 
         JRadioButton grayscaleButton = new JRadioButton("Grayscale");
-        grayscaleButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                float[][] colors = new float[2048][3];
-
-                for(int i = 0; i < colors.length; ++i) {
-                    colors[i][0] = colors[i][1] = colors[i][2] = i / (float)colors.length;
-                }
-                colormap = COLOR_GRAYSCALE;
-                colorPreviewSlider.setColors(colors, colorCount);                 
-            }
-        });
+        grayscaleButton.addActionListener(this);
+				grayscaleButton.setActionCommand("SET_GRAYSCALE");
 
         JRadioButton definedButton   = new JRadioButton("Defined");
-        definedButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                float[][] colors = new float[2048][3];
-                final int NLEVELS = 7;
-
-                for(int i = 0; i < colors.length; ++i) {
-                    float vy = (float)(i / (double)(colors.length - 1));
-                    vy *= NLEVELS; vy = (int)(vy); vy/= NLEVELS;
-                    rainbow(vy, colors[i]);
-                }
-                colormap = COLOR_DEFINED;
-                colorPreviewSlider.setColors(colors, colorCount);
-            }
-        });
+        definedButton.addActionListener(this);
+				definedButton.setActionCommand("SET_DEFINED");
 
         JRadioButton customButton   = new JRadioButton("Custom");
         customButton.setSelected(true);
-        customButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                colormap = COLOR_CUSTOM;
-                colorPreviewSlider.setColors(custom_gradient_cache, colorCount);
-            }
-        });
+        customButton.addActionListener(this);
+				customButton.setActionCommand("SET_CUSTOM");
 
         ButtonGroup colorMapSelectGroup = new ButtonGroup();
         colorMapSelectGroup.add(rainbowButton);
@@ -277,9 +324,9 @@ public class ColormapSelectPanel extends JPanel {
         colormapSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return colormapSelectPanel;
     }
-    
-    public void updateColormap(int minColor, 
-                               int maxColor, 
+
+    public void updateColormap(int minColor,
+                               int maxColor,
                                int colorCount,
                                int colormap) {
         colorPreviewSlider.setMinimum(minColor);
@@ -288,15 +335,15 @@ public class ColormapSelectPanel extends JPanel {
         this.colormap = colormap;
         setColors(colormap, colorCount);
     }
-    
+
     private void setColors(int colormap, int colorCount) {
         float[][] colors = new float[2048][3];
-        
+
         switch (colormap) {
             case COLOR_RAINBOW:
                  for(int i = 0; i < colors.length; ++i) {
                     rainbow(i / (float)colors.length, colors[i]);
-                }                 
+                }
                 break;
             case COLOR_GRAYSCALE:
                 for(int i = 0; i < colors.length; ++i) {
@@ -314,12 +361,12 @@ public class ColormapSelectPanel extends JPanel {
 
                 break;
             case COLOR_CUSTOM:
-                colors = custom_gradient_cache;                
+                colors = custom_gradient_cache;
                 break;
         }
         colorPreviewSlider.setColors(colors, colorCount);
     }
-    
+
     public static void rainbow(float value,float[] color) {
         final float dx=0.8f;
         if (value<0) value=0; if (value>1) value=1;
@@ -327,8 +374,8 @@ public class ColormapSelectPanel extends JPanel {
         color[0] = Math.max(0.0f,(3-Math.abs(value-4)-Math.abs(value-5))/2);
         color[1] = Math.max(0.0f,(4-Math.abs(value-2)-Math.abs(value-4))/2);
         color[2] = Math.max(0.0f,(3-Math.abs(value-1)-Math.abs(value-2))/2);
-    }   
-    
+    }
+
     private void generate_custom_gradient_cache() {
         int n = colortable.getRowCount();
         ColorSpace cs = ((Color)colortable.getValueAt(0, 0)).getColorSpace(); // Assume all colors use the same color space
@@ -373,56 +420,17 @@ public class ColormapSelectPanel extends JPanel {
                     break;
             }
         }
-    }    
+    }
+
     private JPanel initCustomColorPanel(JFrame frame) {
         colorselector = new ColorSelector(frame);
-        colorselector.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                int row = colortable.getSelectedRow();
-                int column = colortable.getSelectedColumn();
-                if(row>=0 && column>=0) {
-                        colortable.setValueAt(e.getSource(), row, column);
-                }
-                generate_custom_gradient_cache();
-                update_gradient_texture = true;
-            }
-        });
+        colorselector.addChangeListener(this);
 
         DefaultTableModel tablemodelcolors= new DefaultTableModel(1,1);
 
         tablemodelcolors.addTableModelListener(new ColorTableTableModelListener());
-        colortable = new ColorTable(tablemodelcolors) {
-            public Class getColumnClass(int column) { //enable JTable to use different renderers, eg Checkbox for Boolean
-                return getValueAt(0, column).getClass();
-            }
-        };
-        colortable.addMouseListener(new ColorTableRightClick(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
-                        int row = colortable.getSelectedRow();
-                        int column = colortable.getSelectedColumn();
-                        if(row>=0 && column>=0)
-                                colorselector.setSelectedColor((Color)colortable.getValueAt(row, column));
-                        colorselector.setVisible(true);
-                }
-                else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
-                        int row = colortable.getSelectedRow();
-                        Object[] o=new Object[1];
-                        o[0]=new Color((int)(Math.random()*256), (int)(Math.random()*256), (int)(Math.random()*256));
-                        ((DefaultTableModel)(colortable.getModel())).insertRow(row, o);
-                        colortable.changeSelection(row, 0, false, false);
-                        colorCountSlider.setMinimum(colortable.getRowCount() - 1);
-                }
-                else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
-                        int row = colortable.getSelectedRow();
-                        ((DefaultTableModel)(colortable.getModel())).removeRow(row);
-                        colorCountSlider.setMinimum(colortable.getRowCount() -1 );
-                }
-                
-                generate_custom_gradient_cache();
-                update_gradient_texture = true;
-            }
-        }));
+        colortable = new ColorTable(tablemodelcolors);
+        colortable.addMouseListener(new ColorTableRightClick(this));
 
         colortable.getColumnModel().getColumn(colortable.convertColumnIndexToView(0)).setHeaderValue("Colors");
         colortable.doLayout();
@@ -443,9 +451,7 @@ public class ColormapSelectPanel extends JPanel {
         colorCountSlider.setMinimum(colortable.getRowCount() - 1 );
         generate_custom_gradient_cache();
 
-
         JScrollPane scroll  = new JScrollPane(colortable);
-
         JPanel panel = new JPanel();
         panel.setBorder(new TitledBorder("Current gradient"));
         BoxLayout panellayout = new BoxLayout(panel, BoxLayout.X_AXIS);
@@ -455,20 +461,8 @@ public class ColormapSelectPanel extends JPanel {
         JRadioButton colorInterpolateModeHSV = new JRadioButton("Interpolate in HSV space");
         colorInterpolateModeRGB.setActionCommand("INTERPOLATE_RGB");
         colorInterpolateModeHSV.setActionCommand("INTERPOLATE_HSV");
-        colorInterpolateModeRGB.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                custom_gradient_interpolate_mode = 0;
-                generate_custom_gradient_cache();
-                update_gradient_texture = true;
-            }
-        });
-        colorInterpolateModeHSV.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                custom_gradient_interpolate_mode = 1;
-                generate_custom_gradient_cache();
-                update_gradient_texture = true;
-            }
-        });
+        colorInterpolateModeRGB.addActionListener(this);
+        colorInterpolateModeHSV.addActionListener(this);
         colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == 0);
         colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == 0);
         ButtonGroup colorInterpolateModeGroup = new ButtonGroup();
@@ -486,7 +480,7 @@ public class ColormapSelectPanel extends JPanel {
         panel.add(scroll);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         return panel;
-    }  
+    }
 }
 
 class UnboundedDoubleSpinnerModel implements SpinnerModel {
