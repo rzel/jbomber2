@@ -13,6 +13,10 @@ class ColorTable extends JTable {
 		super(m);
 	}
 
+	public Class getColumnClass(int column) { //enable JTable to use different renderers, eg Checkbox for Boolean
+			return getValueAt(0, column).getClass();
+	}
+
 	public void setPreferredColumnWidths(double[] percentages) {
 		Dimension tableDim = this.getPreferredSize();
 		double total = 0;
