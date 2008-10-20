@@ -10,8 +10,6 @@ import java.awt.color.*;
 import java.util.*;
 
 public class VectorOptionSelectPanel extends ColormapSelectPanel {
-// 	private float vector_size     = 24.0f;
-// 	private float vector_scale_factor =  1.0f;
 	private JSlider vector_size;
 	private JLabel  vector_size_label;
 	private JSlider vector_scale_factor;
