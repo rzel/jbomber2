@@ -119,7 +119,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
     }
 
 		public void actionPerformed(ActionEvent e) {
-			     if(e.getActionCommand() == "SET_DATASET_RHO") {
+			if(e.getActionCommand() == "SET_DATASET_RHO") {
 				dataset = DATASET_RHO;
 			}
 			else if(e.getActionCommand() == "SET_DATASET_F") {

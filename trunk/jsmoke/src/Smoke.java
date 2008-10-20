@@ -242,13 +242,16 @@ class Smoke {
         switch (panel.getDataset()) {
             case ColormapSelectPanel.DATASET_RHO:
                 dataset_value = (float)rho[idx];
+				break;
             case ColormapSelectPanel.DATASET_F:
                  dataset_value = (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]) * DIM;
+				 break;
             case ColormapSelectPanel.DATASET_V:
                  dataset_value = (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
+				 break;
         }
 
-        // Clamp
+		// Clamp
         if ((panel.getScalemode() & panel.SCALE_CLAMP) == panel.SCALE_CLAMP) {
             double minClamp = panel.getMinClamp();
             double maxClamp = panel.getMaxClamp();
