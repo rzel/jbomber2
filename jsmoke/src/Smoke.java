@@ -272,14 +272,59 @@ class Smoke {
 		return dataset_value;
 	}
 
-	private float sampleDataset(int x, int y, ColormapSelectPanel panel) {
+	private double[][][] directional_vectors = new double[DIM][DIM][2];
+	private void calculate_directional_vectors(ColormapSelectPanel panel) {
+		int[][] indices = {
+		                  {-1,-1},
+		                  { 0,-1},
+		                  { 1,-1},
+		                  {-1, 0},
+		                  { 1, 0},
+		                  {-1, 1},
+		                  { 0, 1},
+		                  { 1, 1},
+		                  };
+		double[][] vectors = {
+		                     {-Math.sqrt(2), Math.sqrt(2)},
+		                     {0.0f, 1.0f},
+												 {Math.sqrt(2), Math.sqrt(2)},
+												 {1.0f, 0.0f},
+												 {Math.sqrt(2), -Math.sqrt(2)},
+												 {0.0f, -1.0f},
+												 {-Math.sqrt(2), -Math.sqrt(2)},
+												 {-1.0f, 0.0f},
+												 };
+
+		for(int x = 0 ; x < DIM; ++x) {
+			for(int y = 0 ; y < DIM; ++y) {
+				double dx = 0.0;
+				double dy = 0.0;
+				double centre = getDatasetColor(x+y*DIM, panel);
+				for(int i = 0; i<8; ++i) {
+					int idx = (((x + indices[i][0])+DIM) % DIM) + (((y + indices[i][1])+DIM) % DIM) * DIM;
+					dx += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][0];
+					dy += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][1];
+				}
+				directional_vectors[x][y][0] = dx;
+				directional_vectors[x][y][1] = dy;
+			}
+		}
+	}
+
+	private double[] sampleDataset(int x, int y, VectorOptionSelectPanel panel) {
 		// x and y here represent the (x,y) id of the grid-rectangle we're sampling
 		double gridx = vectorOptionSelectPanel.getVectorGridX();
 		double gridy = vectorOptionSelectPanel.getVectorGridY();
 		double cells_per_sample_x = DIM / gridx;
 		double cells_per_sample_y = DIM / gridy;
-		double x_sample_centre_pos = (x / gridx) * DIM;
-		double y_sample_centre_pos = (y / gridy) * DIM;
+		double x_sample_centre_pos = ((x+1) / (gridx+1)) * DIM;
+		double y_sample_centre_pos = ((y+1) / (gridy+1)) * DIM;
+
+
+// 		0.0   0.5   1.0   1.5   2.0   2.5   3.0   3.5   4.0
+// 					0.5         1.5         2.5         3.5
+
+
 
 // 			System.out.println("x="+x+" y="+y);
 // 			System.out.println("gridx="+gridx+" gridy="+gridy);
@@ -292,11 +337,19 @@ class Smoke {
 		                                    * ((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5));
 		double weight_nnx = 1.0 - weight_sx;
 		double weight_nny = 1.0 - weight_sy;
-		int nearest_neighbour_x = (int)(x_sample_centre_pos + ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
-		int nearest_neighbour_y = (int)(y_sample_centre_pos + ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_x = (int)(/*x_sample_centre_pos*/ + ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_y = (int)(/*y_sample_centre_pos*/ + ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
 
-		double avg = 0.0;
+		double avgx = 0.0;
+		double avgy = 0.0;
 		int samples = 0;
+// 		if(x==0 && y==0) {
+// 			System.out.println("-cells_per_sample_x="+(-cells_per_sample_x)+" cells_per_sample_x="+cells_per_sample_x);
+// 			System.out.println("-cells_per_sample_y="+(-cells_per_sample_y)+" cells_per_sample_y="+cells_per_sample_y);
+// 			System.out.println("dist_x="+(cells_per_sample_x*2)+" dist_y="+(cells_per_sample_y*2));
+// 		}
+// 		System.out.println("weight_sx="+weight_sx+" weight_sy="+weight_sy);
+// 		System.out.println("nearest_neighbour_x="+nearest_neighbour_x+" nearest_neighbour_y="+nearest_neighbour_y);
 		for (double sample_x = -(cells_per_sample_x / 2.0); sample_x < cells_per_sample_x / 2.0; sample_x += 1.0) {
 			for (double sample_y = -(cells_per_sample_y / 2.0); sample_y < cells_per_sample_y / 2.0; sample_y += 1.0) {
 				double px, py;
@@ -304,37 +357,62 @@ class Smoke {
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				int cell_1_idx = (int)(px) + (int)(py) * DIM;
+				double cell1x = directional_vectors[(int)px][(int)py][0];
+				double cell1y = directional_vectors[(int)px][(int)py][1];
+// 				int cell_1_idx = (int)(px) + (int)(py) * DIM;
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				int cell_2_idx = (int)(px) + (int)(py) * DIM;
+				double cell2x = directional_vectors[(int)px][(int)py][0];
+				double cell2y = directional_vectors[(int)px][(int)py][1];
+// 				int cell_2_idx = (int)(px) + (int)(py) * DIM;
 				px = x_sample_centre_pos + sample_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				int cell_3_idx = (int)(px) + (int)(py) * DIM;
+				double cell3x = directional_vectors[(int)px][(int)py][0];
+				double cell3y = directional_vectors[(int)px][(int)py][1];
+// 				int cell_3_idx = (int)(px) + (int)(py) * DIM;
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				int cell_4_idx = (int)(px) + (int)(py) * DIM;
+				double cell4x = directional_vectors[(int)px][(int)py][0];
+				double cell4y = directional_vectors[(int)px][(int)py][1];
+// 				int cell_4_idx = (int)(px) + (int)(py) * DIM;
 
-// 					System.out.println("px="+px+" py="+py+" dim="+DIM);
+				//System.out.println("px="+px+" py="+py+" dim="+DIM);
 // 					System.out.println("cell_4_idx="+cell_4_idx);
 
 
-				double cell_1 = (double)getDatasetColor(cell_1_idx, panel);
-				double cell_2 = (double)getDatasetColor(cell_2_idx, panel);
-				double cell_3 = (double)getDatasetColor(cell_3_idx, panel);
-				double cell_4 = (double)getDatasetColor(cell_4_idx, panel);
+// 				double cell_1 = (double)getDatasetColor(cell_1_idx, panel);
+// 				double cell_2 = (double)getDatasetColor(cell_2_idx, panel);
+// 				double cell_3 = (double)getDatasetColor(cell_3_idx, panel);
+// 				double cell_4 = (double)getDatasetColor(cell_4_idx, panel);
 
-				avg += (weight_sx * cell_1 + weight_nnx * cell_2) * weight_sy + (weight_sx * cell_3 + weight_nnx * cell_4) * weight_nny;
-				avg = cell_1;
+// 				avg += (weight_sx * cell_1 + weight_nnx * cell_2) * weight_sy + (weight_sx * cell_3 + weight_nnx * cell_4) * weight_nny;
+				avgx += (weight_sx * cell1x + weight_nnx * cell2x) * weight_sy + (weight_sx * cell3x + weight_nnx * cell4x) * weight_nny;
+				avgy += (weight_sy * cell1y + weight_nny * cell2y) * weight_sy + (weight_sy * cell3y + weight_nny * cell4y) * weight_nny;
+// 				++samples;
 			}
 		}
-		return (float)avg;
+
+		double len = Math.sqrt(avgx*avgx + avgy*avgy);
+		panel.update_longest_vector(len);
+		double[] result = new double[3];
+		result[0] = avgx;
+		result[1] = avgy;
+		result[2] = len;
+		return result;
+
+
+
+//
+// 		float[] result = new float[2];
+// 		result[0] = (float)(180.0 * ((avgx * 0) + (avgy * 1)));
+// 		result[1] = (float)len;
+// 		return result;
 	}
 
 	//visualize: This is the main visualization function
@@ -383,6 +461,7 @@ class Smoke {
 		}
 
 		if (draw_vecs) {
+			calculate_directional_vectors(vectorOptionSelectPanel);
 			if (vector_type == VECTOR_TYPE_HEDGEHOG) {
 				gl.glBegin(GL.GL_LINES);				//draw velocities
 				for (i = 0; i < DIM; i++)
@@ -408,17 +487,27 @@ class Smoke {
 				float spacey = (float)((winHeight - 2 * hn) / (gridy + 0.0f));
 				gl.glPushMatrix();
 				gl.glTranslatef(winWidth / 2.0f, winHeight / 2.0f, 0);
+				double maxveclen = vectorOptionSelectPanel.get_longest_vector();
+				double maxveclenx = 0.95 * (winWidth / gridx);
+				double maxvecleny = 0.95 * (winHeight / gridy);
+				double vecscalefact = Math.min(maxveclen/maxveclenx, maxveclen/maxvecleny);
 				for (int x = 0 ; x < gridx ; ++x) {
 					for (int y = 0 ; y < gridy ; ++y) {
 						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
 // 								float vy = getDatasetColor(idx, vectorOptionSelectPanel);
-						float vy = sampleDataset(x, y, vectorOptionSelectPanel);
-						float size = vector_size * vy * vector_scalefactor;
+						double[] result = sampleDataset(x, y, vectorOptionSelectPanel);
+						double rotation = 180.0 * (result[1]/result[2]);
+						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
+						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
+// 							System.out.println(maxveclenx+" mvl="+maxveclen+" rslt="+(result[2])+" res*vs="+(result[2]*vecscalefact)+" vecscalefact="+vecscalefact);
+							size = result[2] / vecscalefact;
+						}
+						//System.out.println("size="+size);
 						gl.glPushMatrix();
 						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
 						                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
 						                0.0f);
-						gl.glRotatef(360.0f*vy, 0, 0, 1);
+						gl.glRotatef((float)rotation, 0, 0, 1);
 						gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
 						gl.glTexCoord2d(0.0, 0.0);
 						gl.glVertex2d(-size, -size);
@@ -486,7 +575,8 @@ class Smoke {
 		}
 
 		smokeColormapSelectPanel.reset_maxdataset_value();
-		smokeColormapSelectPanel.reset_mindataset_value();
+		vectorOptionSelectPanel.reset_mindataset_value();
+		vectorOptionSelectPanel.reset_longest_vector();
 	}
 	static long avg_begin      = 0;
 	static long avg_begin_prev = 0;
@@ -634,9 +724,9 @@ class Smoke {
 		smokeSelectPanel.add(smokeButton);
 		smokeSelectPanel.add(vectorButton);
 
-		smokeButton.setSelected(false);
+		smokeButton.setSelected(true);
 		vectorButton.setSelected(true);
-		draw_smoke = false;
+		draw_smoke = true;
 		draw_vecs = true;
 
 		smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));

@@ -18,8 +18,13 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 	private JLabel  vector_grid_x_label;
 	private JSlider vector_grid_y;
 	private JLabel  vector_grid_y_label;
+	private double  longest_vector;
+	private double  longest_vector_last;
 	public VectorOptionSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
 		super(minColor, maxColor, colorCount, colormap, frame);
+
+		longest_vector = 0.0;
+		longest_vector_last = 1.0;
 
 		JPanel optionPanel = new JPanel();
 		optionPanel.setBorder(new TitledBorder("Vector Options"));
@@ -54,6 +59,19 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		                                6, 6); // xPad, yPad
 
 		add(optionPanel);
+	}
+
+	public void update_longest_vector(double v) {
+		longest_vector = v > longest_vector ? v : longest_vector;
+	}
+
+	public void reset_longest_vector() {
+		longest_vector_last = longest_vector;
+		longest_vector = 0.0;
+	}
+
+	public double get_longest_vector() {
+		return longest_vector_last;
 	}
 
 	public float getVectorSize() {
