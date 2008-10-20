@@ -165,8 +165,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			if (row >= 0 && column >= 0)
 				colorselector.setSelectedColor((Color)colortable.getValueAt(row, column));
 			colorselector.setVisible(true);
-			generate_custom_gradient_cache();
-			update_gradient_texture = true;
+// 			generate_custom_gradient_cache();
+// 			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
 			int row = colortable.getSelectedRow();
 			Object[] o = new Object[1];
@@ -201,7 +201,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			colorPreviewSlider.setCount(colorCount);
 			generate_custom_gradient_cache();
 			update_gradient_texture = true;
-		} else if (e.getSource() == colorselector) {
+		} else if(e.getSource().getClass().getName().equals("java.awt.Color")) {
 			int row = colortable.getSelectedRow();
 			int column = colortable.getSelectedColumn();
 			if (row >= 0 && column >= 0) {
