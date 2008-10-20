@@ -22,6 +22,11 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
     public static final int SCALE_CLAMP = 1;
     public static final int SCALE_SCALE = 2;
 
+		private float maxdataset_value = Float.MIN_VALUE;
+		private float mindataset_value = Float.MAX_VALUE;
+		private float maxdataset_value_last = 1.0f;
+		private float mindataset_value_last = 0.0f;
+
     private JSliderlessSlider colorPreviewSlider;
     private int colorCount = 2047;
     private ColorTable colortable;
@@ -50,6 +55,32 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
         updateColormap(minColor, maxColor, colorCount, colormap);
     }
+
+		public void update_maxdataset_value(float dataset_value) {
+			maxdataset_value = dataset_value > maxdataset_value ? dataset_value : maxdataset_value;
+		}
+
+		public void reset_maxdataset_value() {
+			maxdataset_value_last = maxdataset_value;
+			maxdataset_value = Float.MIN_VALUE;
+		}
+
+		public float get_maxdataset_value() {
+			return maxdataset_value_last;
+		}
+
+		public void update_mindataset_value(float dataset_value) {
+			mindataset_value = dataset_value < mindataset_value ? dataset_value : mindataset_value;
+		}
+
+		public void reset_mindataset_value() {
+			mindataset_value_last = mindataset_value;
+			mindataset_value = Float.MAX_VALUE;
+		}
+
+		public float get_mindataset_value() {
+			return mindataset_value_last;
+		}
 
     public int getDataset() {
          return dataset;

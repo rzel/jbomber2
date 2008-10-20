@@ -217,34 +217,6 @@ class Smoke {
 //------ VISUALIZATION CODE STARTS HERE -----------------------------------------------------------------
 
 
-    private static float maxvy=1.0f;
-    private static float maxvy_lastframe=1.0f;
-    private static float minvy=0.0f;
-    private static float minvy_lastframe=0.0f;
-
-
-    //set_colormap: Sets three different types of colormaps
-    void set_colormap(GL gl, float vy, ColormapSelectPanel panel) {
-        float[] rgb = new float[3];
-
-        // Clamp
-        if ((panel.getScalemode() & ColormapSelectPanel.SCALE_CLAMP) == ColormapSelectPanel.SCALE_CLAMP) {
-            double minClamp = panel.getMinClamp();
-            double maxClamp = panel.getMaxClamp();
-            vy = (float)(vy<minClamp ? minClamp : vy>maxClamp ? maxClamp : vy); // Clamp!
-        }
-
-        maxvy = vy > maxvy ? vy : maxvy;
-        minvy = vy < minvy ? vy : minvy;
-
-        if ((panel.getScalemode() & ColormapSelectPanel.SCALE_SCALE) == ColormapSelectPanel.SCALE_SCALE) {
-            vy = (vy - minvy_lastframe) / (maxvy_lastframe - minvy_lastframe);
-        }
-
-		gl.glTexCoord1f(vy * texture_fill);
-    }
-
-
     //direction_to_color: Set the current color by mapping a direction vector (x,y), using
     //                    the color mapping method 'method'. If method==1, map the vector direction
     //                    using a rainbow colormap. If method==0, simply use the white color
@@ -266,15 +238,31 @@ class Smoke {
     }
 
     private float getDatasetColor(int idx, ColormapSelectPanel panel) {
+        float dataset_value = 0.0f;
         switch (panel.getDataset()) {
             case ColormapSelectPanel.DATASET_RHO:
-                return (float)rho[idx];
+                dataset_value = (float)rho[idx];
             case ColormapSelectPanel.DATASET_F:
-                return (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]) * DIM;
+                 dataset_value = (float)Math.sqrt(fx[idx] * fx[idx] + fy[idx] * fy[idx]) * DIM;
             case ColormapSelectPanel.DATASET_V:
-                return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
+                 dataset_value = (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
         }
-        return 0.0f;
+
+        // Clamp
+        if ((panel.getScalemode() & panel.SCALE_CLAMP) == panel.SCALE_CLAMP) {
+            double minClamp = panel.getMinClamp();
+            double maxClamp = panel.getMaxClamp();
+            dataset_value = (float)(dataset_value<minClamp ? minClamp : dataset_value>maxClamp ? maxClamp : dataset_value); // Clamp!
+        }
+
+				panel.update_maxdataset_value(dataset_value);
+				panel.update_mindataset_value(dataset_value);
+
+        if ((panel.getScalemode() & panel.SCALE_SCALE) == panel.SCALE_SCALE) {
+            dataset_value = (dataset_value - panel.get_mindataset_value()) / (panel.get_maxdataset_value() - panel.get_mindataset_value());
+        }
+
+        return dataset_value;
     }
 
 		private float sampleDataset(int x, int y, ColormapSelectPanel panel) {
@@ -284,7 +272,12 @@ class Smoke {
 			double cells_per_sample_x = DIM / gridx;
 			double cells_per_sample_y = DIM / gridy;
 			double x_sample_centre_pos = (x / gridx) * DIM;
-			double y_sample_centre_pos = (x / gridx) * DIM;
+			double y_sample_centre_pos = (y / gridy) * DIM;
+
+// 			System.out.println("x="+x+" y="+y);
+// 			System.out.println("gridx="+gridx+" gridy="+gridy);
+// 			System.out.println("cells_per_sample_x="+cells_per_sample_x+" cells_per_sample_y="+cells_per_sample_y);
+// 			System.out.println("x_sample_centre_pos="+x_sample_centre_pos+" y_sample_centre_pos="+y_sample_centre_pos);
 
 			double weight_sx  = 0.5 - Math.sqrt(((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5)
 			                                  * ((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5));
@@ -331,6 +324,7 @@ class Smoke {
 					double cell_4 = (double)getDatasetColor(cell_4_idx, panel);
 
 					avg += (weight_sx * cell_1 + weight_nnx * cell_2) * weight_sy + (weight_sx * cell_3 + weight_nnx * cell_4) * weight_nny;
+					avg = cell_1;
 				}
 			}
 			return (float)avg;
@@ -356,7 +350,7 @@ class Smoke {
                 px = wn + (float)i * wn;
                 py = hn + (float)j * hn;
                 idx = (j * DIM) + i;
-                set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
+								gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
                 gl.glVertex2d(px,py);
 
                 for (i = 0; i < DIM - 1; i++) {
@@ -364,19 +358,19 @@ class Smoke {
                     py = hn + (j + 1) * hn;
                     idx = ((j + 1) * DIM) + i;
 
-                    set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
+                    gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
                     gl.glVertex2d(px, py);
                     px = wn + (i + 1) * wn;
                     py = hn + j * hn;
                     idx = (j * DIM) + (i + 1);
-                    set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
+                    gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
                     gl.glVertex2d(px, py);
                 }
 
                 px = wn + (float)(DIM - 1) * wn;
                 py = hn + (float)(j + 1) * hn;
                 idx = ((j + 1) * DIM) + (DIM - 1);
-                set_colormap(gl, getDatasetColor(idx, smokeColormapSelectPanel), smokeColormapSelectPanel);
+                gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
                 gl.glVertex2d(px, py);
                 gl.glEnd();
             }
@@ -389,7 +383,8 @@ class Smoke {
 								for (j = 0; j < DIM; j++) {
 								idx = (j * DIM) + i;
 								//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
-								set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
+								//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
+								gl.glTexCoord1f(getDatasetColor(idx, vectorOptionSelectPanel) * texture_fill);
 								gl.glVertex2d(wn + i * wn, hn + j * hn);
 								gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
 								}
@@ -485,10 +480,8 @@ class Smoke {
 // TODO                                        colorOverviewSlider.setMaximum((int)maxvy_lastframe+1);
 				}
 
-				maxvy_lastframe = maxvy;
-				minvy_lastframe = minvy;
-				maxvy = Float.MIN_VALUE;
-				minvy = Float.MAX_VALUE;
+				smokeColormapSelectPanel.reset_maxdataset_value();
+				smokeColormapSelectPanel.reset_mindataset_value();
     }
     static long avg_begin      = 0;
     static long avg_begin_prev = 0;
@@ -707,10 +700,10 @@ class Smoke {
         JTabbedPane tabPane = new JTabbedPane();
 
         // Initialize option panel
-        smokeColormapSelectPanel = new ColormapSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
+        smokeColormapSelectPanel = new ColormapSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
         tabPane.addTab("Smoke options", smokeColormapSelectPanel);
 
-        vectorOptionSelectPanel = new VectorOptionSelectPanel(0, (int)maxvy_lastframe+1, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
+        vectorOptionSelectPanel = new VectorOptionSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
         tabPane.addTab("Vector options", vectorOptionSelectPanel);
 
         JPanel SimulationOptionPanel = new JPanel();
