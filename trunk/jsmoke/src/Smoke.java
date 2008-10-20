@@ -274,9 +274,67 @@ class Smoke {
             case ColormapSelectPanel.DATASET_V:
                 return (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
         }
-
         return 0.0f;
     }
+
+		private float sampleDataset(int x, int y, ColormapSelectPanel panel) {
+			// x and y here represent the (x,y) id of the grid-rectangle we're sampling
+			double gridx = vectorOptionSelectPanel.getVectorGridX();
+			double gridy = vectorOptionSelectPanel.getVectorGridY();
+			double cells_per_sample_x = DIM / gridx;
+			double cells_per_sample_y = DIM / gridy;
+			double x_sample_centre_pos = (x / gridx) * DIM;
+			double y_sample_centre_pos = (x / gridx) * DIM;
+
+			double weight_sx  = 0.5 - Math.sqrt(((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5)
+			                                  * ((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5));
+			double weight_sy  = 0.5 - Math.sqrt(((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5)
+			                                  * ((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5));
+			double weight_nnx = 1.0 - weight_sx;
+			double weight_nny = 1.0 - weight_sy;
+			int nearest_neighbour_x = (int)(x_sample_centre_pos + ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
+			int nearest_neighbour_y = (int)(y_sample_centre_pos + ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
+
+			double avg = 0.0;
+			int samples = 0;
+			for(double sample_x = -(cells_per_sample_x / 2.0); sample_x < cells_per_sample_x / 2.0; sample_x += 1.0) {
+				for(double sample_y = -(cells_per_sample_y / 2.0); sample_y < cells_per_sample_y / 2.0; sample_y += 1.0) {
+					double px, py;
+					px = x_sample_centre_pos + sample_x;
+					py = y_sample_centre_pos + sample_y;
+					px = (px + DIM) % DIM;
+					py = (py + DIM) % DIM;
+					int cell_1_idx = (int)(px) + (int)(py) * DIM;
+					px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
+					py = y_sample_centre_pos + sample_y;
+					px = (px + DIM) % DIM;
+					py = (py + DIM) % DIM;
+					int cell_2_idx = (int)(px) + (int)(py) * DIM;
+					px = x_sample_centre_pos + sample_x;
+					py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
+					px = (px + DIM) % DIM;
+					py = (py + DIM) % DIM;
+					int cell_3_idx = (int)(px) + (int)(py) * DIM;
+					px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
+					py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
+					px = (px + DIM) % DIM;
+					py = (py + DIM) % DIM;
+					int cell_4_idx = (int)(px) + (int)(py) * DIM;
+
+// 					System.out.println("px="+px+" py="+py+" dim="+DIM);
+// 					System.out.println("cell_4_idx="+cell_4_idx);
+
+
+					double cell_1 = (double)getDatasetColor(cell_1_idx, panel);
+					double cell_2 = (double)getDatasetColor(cell_2_idx, panel);
+					double cell_3 = (double)getDatasetColor(cell_3_idx, panel);
+					double cell_4 = (double)getDatasetColor(cell_4_idx, panel);
+
+					avg += (weight_sx * cell_1 + weight_nnx * cell_2) * weight_sy + (weight_sx * cell_3 + weight_nnx * cell_4) * weight_nny;
+				}
+			}
+			return (float)avg;
+		}
 
     //visualize: This is the main visualization function
     void visualize(GL gl) {
@@ -353,7 +411,8 @@ class Smoke {
 						for(int x = 0 ; x < gridx ; ++x) {
 							for(int y = 0 ; y < gridy ; ++y) {
 								idx = (int)((x/(float)gridx) * DIM + DIM * (int)(DIM * (y/(float)gridy)));
-								float vy = getDatasetColor(idx, vectorOptionSelectPanel);
+// 								float vy = getDatasetColor(idx, vectorOptionSelectPanel);
+								float vy = sampleDataset(x, y, vectorOptionSelectPanel);
 								float size = vector_size * vy * vector_scalefactor;
 								gl.glPushMatrix();
 								gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
