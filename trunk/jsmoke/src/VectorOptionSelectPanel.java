@@ -50,8 +50,8 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		optionPanel.add(vector_grid_y_label);
 		optionPanel.add(vector_grid_y);
 		SpringUtilities.makeCompactGrid(optionPanel, 4, 2,  // rows, cols
-		                                             6, 6,  // initX, initY
-		                                             6, 6); // xPad, yPad
+		                                6, 6,  // initX, initY
+		                                6, 6); // xPad, yPad
 
 		add(optionPanel);
 	}
@@ -62,17 +62,16 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 
 	public float getVectorScaleFactor() {
 		float f = vector_scale_factor.getValue();
-		if(f>=500) {
+		if (f >= 500) {
 			f = (f - 400.0f) / 100.0f;
-		}
-		else {
+		} else {
 			f = (float)Math.sqrt(1.0f / (500.0f - f));
 		}
 		return f;
 	}
 
 	public int getVectorGridX() {
-			return vector_grid_x.getValue();
+		return vector_grid_x.getValue();
 	}
 
 	public int getVectorGridY() {
@@ -81,17 +80,14 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 
 	class VectorOptionSelectPanelListener implements ChangeListener {
 		public void stateChanged(ChangeEvent e) {
-			if(e.getSource() == vector_size) {
+			if (e.getSource() == vector_size) {
 				vector_size_label.setText("Size [" + getVectorSize() + "]:");
-			}
-			else if(e.getSource() == vector_scale_factor) {
-				float f = ((int)(getVectorScaleFactor() * 100.0f))/100.0f;
+			} else if (e.getSource() == vector_scale_factor) {
+				float f = ((int)(getVectorScaleFactor() * 100.0f)) / 100.0f;
 				vector_scale_factor_label.setText("Scale factor [" + f + "]:");
-			}
-			else if(e.getSource() == vector_grid_x) {
+			} else if (e.getSource() == vector_grid_x) {
 				vector_grid_x_label.setText("Grid X [" + getVectorGridX() + "]:");
-			}
-			else if(e.getSource() == vector_grid_y) {
+			} else if (e.getSource() == vector_grid_y) {
 				vector_grid_y_label.setText("Grid Y [" + getVectorGridY() + "]:");
 			}
 		}
