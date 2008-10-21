@@ -357,29 +357,29 @@ class Smoke {
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell1x = directional_vectors[(int)px][(int)py][0];
-				double cell1y = directional_vectors[(int)px][(int)py][1];
+				double cell1x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
+				double cell1y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
 // 				int cell_1_idx = (int)(px) + (int)(py) * DIM;
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell2x = directional_vectors[(int)px][(int)py][0];
-				double cell2y = directional_vectors[(int)px][(int)py][1];
+				double cell2x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
+				double cell2y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
 // 				int cell_2_idx = (int)(px) + (int)(py) * DIM;
 				px = x_sample_centre_pos + sample_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell3x = directional_vectors[(int)px][(int)py][0];
-				double cell3y = directional_vectors[(int)px][(int)py][1];
+				double cell3x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
+				double cell3y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
 // 				int cell_3_idx = (int)(px) + (int)(py) * DIM;
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell4x = directional_vectors[(int)px][(int)py][0];
-				double cell4y = directional_vectors[(int)px][(int)py][1];
+				double cell4x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
+				double cell4y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
 // 				int cell_4_idx = (int)(px) + (int)(py) * DIM;
 
 				//System.out.println("px="+px+" py="+py+" dim="+DIM);
@@ -461,7 +461,7 @@ class Smoke {
 		}
 
 		if (draw_vecs) {
-			calculate_directional_vectors(vectorOptionSelectPanel);
+			//calculate_directional_vectors(vectorOptionSelectPanel);
 			if (vector_type == VECTOR_TYPE_HEDGEHOG) {
 				gl.glBegin(GL.GL_LINES);				//draw velocities
 				for (i = 0; i < DIM; i++)
@@ -496,7 +496,10 @@ class Smoke {
 						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
 // 								float vy = getDatasetColor(idx, vectorOptionSelectPanel);
 						double[] result = sampleDataset(x, y, vectorOptionSelectPanel);
-						double rotation = 180.0 * (result[1]/result[2]);
+						double inprod = result[1]/result[2];
+						double xdir   = result[0]/Math.abs(result[0]);
+						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;// * (f/Math.abs(f));
+						//System.out.println("inprod="+inprod+" acos="+rotation);
 						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
 						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
 // 							System.out.println(maxveclenx+" mvl="+maxveclen+" rslt="+(result[2])+" res*vs="+(result[2]*vecscalefact)+" vecscalefact="+vecscalefact);
