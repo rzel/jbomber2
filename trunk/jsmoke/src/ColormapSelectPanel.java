@@ -114,8 +114,31 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		return colormap;
 	}
 
-	public float[] getCustomGradient(int index) {
-		return custom_gradient_cache[index];
+	public float[] getGradientColor(double pos) {
+		float[] color = new float[3];
+		int j = (int)(pos * (custom_gradient_cache.length-1) + 0.5);
+
+		switch(getColormap()) {
+			case COLOR_GRAYSCALE: {
+				float c = (float)pos;
+				color[0] = c;
+				color[1] = c;
+				color[2] = c;
+			}; break;
+			case COLOR_RAINBOW: {
+				rainbow((float)pos, color);
+			}; break;
+			case COLOR_DEFINED: {
+				float vy = (float)pos;
+				final int NLEVELS = 7;
+				vy *= NLEVELS; vy = (int)(vy); vy /= NLEVELS;
+				rainbow(vy, color);
+			}; break;
+			case COLOR_CUSTOM: {
+				color = custom_gradient_cache[j];
+			}; break;
+		}
+		return color;
 	}
 
 	public void actionPerformed(ActionEvent e) {
