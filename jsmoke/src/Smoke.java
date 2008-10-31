@@ -328,7 +328,7 @@ class Smoke {
 		double weight_nny = 1.0 - weight_sy;
 		int nearest_neighbour_x = (int)(((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
 		int nearest_neighbour_y = (int)(((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
-
+                
 		double avgs = 0.0;
 		double avgx = 0.0;
 		double avgy = 0.0;
@@ -653,6 +653,7 @@ class Smoke {
 		simOnButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				frozen = false;
+                                panel.repaint(50);                                
 			}
 		});
 
@@ -660,6 +661,7 @@ class Smoke {
 		simOffButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				frozen = true;
+                                panel.repaint(50);
 			}
 		});
 		ButtonGroup simOnOffGroup = new ButtonGroup();
