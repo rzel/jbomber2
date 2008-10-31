@@ -41,7 +41,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	private boolean update_gradient_texture;
 
 	private UnboundedDoubleSpinnerModel minClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(0.0);
-	private UnboundedDoubleSpinnerModel maxClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);    private static float[][] custom_gradient_cache = new float[2048][3];
+	private UnboundedDoubleSpinnerModel maxClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);            
+        private float[][] custom_gradient_cache = new float[2048][3];
 	int custom_gradient_interpolate_mode = 0;
 
 	public ColormapSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
