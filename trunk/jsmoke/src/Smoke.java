@@ -329,16 +329,10 @@ class Smoke {
 		int nearest_neighbour_x = (int)(((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
 		int nearest_neighbour_y = (int)(((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
 
+		double avgs = 0.0;
 		double avgx = 0.0;
 		double avgy = 0.0;
 		int samples = 0;
-// 		if(x==0 && y==0) {
-// 			System.out.println("-cells_per_sample_x="+(-cells_per_sample_x)+" cells_per_sample_x="+cells_per_sample_x);
-// 			System.out.println("-cells_per_sample_y="+(-cells_per_sample_y)+" cells_per_sample_y="+cells_per_sample_y);
-// 			System.out.println("dist_x="+(cells_per_sample_x*2)+" dist_y="+(cells_per_sample_y*2));
-// 		}
-// 		System.out.println("weight_sx="+weight_sx+" weight_sy="+weight_sy);
-// 		System.out.println("nearest_neighbour_x="+nearest_neighbour_x+" nearest_neighbour_y="+nearest_neighbour_y);
 		for (double sample_x = -(cells_per_sample_x / 2.0); sample_x < cells_per_sample_x / 2.0; sample_x += 1.0) {
 			for (double sample_y = -(cells_per_sample_y / 2.0); sample_y < cells_per_sample_y / 2.0; sample_y += 1.0) {
 				double px, py;
@@ -346,62 +340,45 @@ class Smoke {
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell1x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
-				double cell1y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
-// 				int cell_1_idx = (int)(px) + (int)(py) * DIM;
+				double cell1s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell1vx = vx[(int)(px)+(int)(py)*DIM];
+				double cell1vy = vy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell2x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
-				double cell2y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
-// 				int cell_2_idx = (int)(px) + (int)(py) * DIM;
+				double cell2s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell2vx = vx[(int)(px)+(int)(py)*DIM];
+				double cell2vy = vy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell3x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
-				double cell3y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
-// 				int cell_3_idx = (int)(px) + (int)(py) * DIM;
+				double cell3s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell3vx = vx[(int)(px)+(int)(py)*DIM];
+				double cell3vy = vy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell4x = vx[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][0];
-				double cell4y = vy[(int)(px)+(int)(py)*DIM];//directional_vectors[(int)px][(int)py][1];
-// 				int cell_4_idx = (int)(px) + (int)(py) * DIM;
-
-				//System.out.println("px="+px+" py="+py+" dim="+DIM);
-// 					System.out.println("cell_4_idx="+cell_4_idx);
-
-
-// 				double cell_1 = (double)getDatasetColor(cell_1_idx, panel);
-// 				double cell_2 = (double)getDatasetColor(cell_2_idx, panel);
-// 				double cell_3 = (double)getDatasetColor(cell_3_idx, panel);
-// 				double cell_4 = (double)getDatasetColor(cell_4_idx, panel);
-
-// 				avg += (weight_sx * cell_1 + weight_nnx * cell_2) * weight_sy + (weight_sx * cell_3 + weight_nnx * cell_4) * weight_nny;
-				avgx += (weight_sx * cell1x + weight_nnx * cell2x) * weight_sy + (weight_sx * cell3x + weight_nnx * cell4x) * weight_nny;
-				avgy += (weight_sy * cell1y + weight_nny * cell2y) * weight_sy + (weight_sy * cell3y + weight_nny * cell4y) * weight_nny;
-// 				++samples;
+				double cell4s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell4vx = vx[(int)(px)+(int)(py)*DIM];
+				double cell4vy = vy[(int)(px)+(int)(py)*DIM];
+				avgs += (weight_sx * cell1s + weight_nnx * cell2s) * weight_sy + (weight_sx * cell3s + weight_nnx * cell4s) * weight_nny;
+				avgx += (weight_sx * cell1vx + weight_nnx * cell2vx) * weight_sy + (weight_sx * cell3vx + weight_nnx * cell4vx) * weight_nny;
+				avgy += (weight_sy * cell1vy + weight_nny * cell2vy) * weight_sy + (weight_sy * cell3vy + weight_nny * cell4vy) * weight_nny;
+				++samples;
 			}
 		}
 
 		double len = Math.sqrt(avgx*avgx + avgy*avgy);
 		panel.update_longest_vector(len);
-		double[] result = new double[3];
+		double[] result = new double[4];
 		result[0] = avgx;
 		result[1] = avgy;
 		result[2] = len;
+		result[3] = avgs / ((double)samples);
 		return result;
-
-
-
-//
-// 		float[] result = new float[2];
-// 		result[0] = (float)(180.0 * ((avgx * 0) + (avgy * 1)));
-// 		result[1] = (float)len;
-// 		return result;
 	}
 
 	//visualize: This is the main visualization function
@@ -491,9 +468,8 @@ class Smoke {
 						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
 							size = 0.5 * (result[2] / maxveclen) * vecscalefact;
 						}
-						result[2] = result[2] / maxveclen;
-						result[2] = result[2] < 0.0 ? 0.0 : result[2] > 1.0 ? 1.0 : result[2];
-						float[] color = vectorOptionSelectPanel.getGradientColor(result[2]);
+						size = 0.5 * vecscalefact;
+						float[] color = vectorOptionSelectPanel.getGradientColor(result[3]);
 						gl.glColor3f(color[0], color[1], color[2]);
 						gl.glPushMatrix();
 						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),

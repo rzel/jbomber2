@@ -115,6 +115,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	}
 
 	public float[] getGradientColor(double pos) {
+		pos = pos < 0.0 ? 0.0 : pos > 1.0 ? 1.0 : pos;
 		float[] color = new float[3];
 		int j = (int)(pos * (custom_gradient_cache.length-1) + 0.5);
 
