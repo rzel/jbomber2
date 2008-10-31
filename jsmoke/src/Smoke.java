@@ -320,25 +320,14 @@ class Smoke {
 		double x_sample_centre_pos = ((x+1) / (gridx+1)) * DIM;
 		double y_sample_centre_pos = ((y+1) / (gridy+1)) * DIM;
 
-
-// 		0.0   0.5   1.0   1.5   2.0   2.5   3.0   3.5   4.0
-// 					0.5         1.5         2.5         3.5
-
-
-
-// 			System.out.println("x="+x+" y="+y);
-// 			System.out.println("gridx="+gridx+" gridy="+gridy);
-// 			System.out.println("cells_per_sample_x="+cells_per_sample_x+" cells_per_sample_y="+cells_per_sample_y);
-// 			System.out.println("x_sample_centre_pos="+x_sample_centre_pos+" y_sample_centre_pos="+y_sample_centre_pos);
-
 		double weight_sx  = 0.5 - Math.sqrt(((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5)
 		                                    * ((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5));
 		double weight_sy  = 0.5 - Math.sqrt(((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5)
 		                                    * ((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5));
 		double weight_nnx = 1.0 - weight_sx;
 		double weight_nny = 1.0 - weight_sy;
-		int nearest_neighbour_x = (int)(/*x_sample_centre_pos*/ + ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
-		int nearest_neighbour_y = (int)(/*y_sample_centre_pos*/ + ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_x = (int)(((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_y = (int)(((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
 
 		double avgx = 0.0;
 		double avgy = 0.0;
@@ -488,24 +477,24 @@ class Smoke {
 				gl.glPushMatrix();
 				gl.glTranslatef(winWidth / 2.0f, winHeight / 2.0f, 0);
 				double maxveclen = vectorOptionSelectPanel.get_longest_vector();
-				double maxveclenx = 0.95 * (winWidth / gridx);
-				double maxvecleny = 0.95 * (winHeight / gridy);
-				double vecscalefact = Math.min(maxveclen/maxveclenx, maxveclen/maxvecleny);
+				double maxveclenx = 0.99 * (winWidth / gridx);
+				double maxvecleny = 0.99 * (winHeight / gridy);
+				double vecscalefact = Math.min(maxveclenx, maxvecleny);
 				for (int x = 0 ; x < gridx ; ++x) {
 					for (int y = 0 ; y < gridy ; ++y) {
 						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
-// 								float vy = getDatasetColor(idx, vectorOptionSelectPanel);
 						double[] result = sampleDataset(x, y, vectorOptionSelectPanel);
 						double inprod = result[1]/result[2];
 						double xdir   = result[0]/Math.abs(result[0]);
-						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;// * (f/Math.abs(f));
-						//System.out.println("inprod="+inprod+" acos="+rotation);
+						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;
 						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
 						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
-// 							System.out.println(maxveclenx+" mvl="+maxveclen+" rslt="+(result[2])+" res*vs="+(result[2]*vecscalefact)+" vecscalefact="+vecscalefact);
-							size = result[2] / vecscalefact;
+							size = 0.5 * (result[2] / maxveclen) * vecscalefact;
 						}
-						//System.out.println("size="+size);
+						result[2] = result[2] / maxveclen;
+						result[2] = result[2] < 0.0 ? 0.0 : result[2] > 1.0 ? 1.0 : result[2];
+						float[] color = vectorOptionSelectPanel.getGradientColor(result[2]);
+						gl.glColor3f(color[0], color[1], color[2]);
 						gl.glPushMatrix();
 						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
 						                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
@@ -578,6 +567,8 @@ class Smoke {
 		}
 
 		smokeColormapSelectPanel.reset_maxdataset_value();
+		smokeColormapSelectPanel.reset_mindataset_value();
+		vectorOptionSelectPanel.reset_maxdataset_value();
 		vectorOptionSelectPanel.reset_mindataset_value();
 		vectorOptionSelectPanel.reset_longest_vector();
 	}
@@ -938,35 +929,7 @@ class Smoke {
 				boolean fixup = ncolors + 1 != n;
 				for (int i = 0 ; i <= ncolors; ++i) {
 					double pos = (double)i / (double)ncolors;
-					int j = (int)(pos * 2047 + 0.5);
-
-					switch (smokeColormapSelectPanel.getColormap()) {
-						case ColormapSelectPanel.COLOR_GRAYSCALE: {
-							float c = (float)pos;
-							texture_data.put(c);
-							texture_data.put(c);
-							texture_data.put(c);
-						}
-						; break;
-						case ColormapSelectPanel.COLOR_RAINBOW: {
-							float[] c = new float[3];
-							ColormapSelectPanel.rainbow((float)pos, c);
-							texture_data.put(c);
-						}
-						; break;
-						case ColormapSelectPanel.COLOR_DEFINED: {
-							float[] c = new float[3];
-							float vy = (float)pos;
-							final int NLEVELS = 7;
-							vy *= NLEVELS; vy = (int)(vy); vy /= NLEVELS;
-							ColormapSelectPanel.rainbow(vy, c);
-							texture_data.put(c);
-						}
-						; break;
-						case ColormapSelectPanel.COLOR_CUSTOM:
-							texture_data.put(smokeColormapSelectPanel.getCustomGradient(j));
-							break;
-					}
+					texture_data.put(smokeColormapSelectPanel.getGradientColor(pos));
 					if (i == ncolors && fixup) { //Fixup clamping of colors to texture
 						fixup = false;
 						--i;
