@@ -320,15 +320,18 @@ class Smoke {
 		double x_sample_centre_pos = ((x+1) / (gridx+1)) * DIM;
 		double y_sample_centre_pos = ((y+1) / (gridy+1)) * DIM;
 
+
+
 		double weight_sx  = 0.5 - Math.sqrt(((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5)
 		                                    * ((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5));
 		double weight_sy  = 0.5 - Math.sqrt(((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5)
 		                                    * ((y_sample_centre_pos - (int)y_sample_centre_pos) - 0.5));
 		double weight_nnx = 1.0 - weight_sx;
 		double weight_nny = 1.0 - weight_sy;
-		int nearest_neighbour_x = (int)(((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
-		int nearest_neighbour_y = (int)(((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
-                
+
+		int nearest_neighbour_x = (int)(1.5 * ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_y = (int)(1.5 * ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
+
 		double avgs = 0.0;
 		double avgx = 0.0;
 		double avgy = 0.0;
