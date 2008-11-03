@@ -477,17 +477,17 @@ class Smoke {
 						                0.0f);
 						gl.glRotatef((float)rotation, 0, 0, 1);
 						gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
-						gl.glTexCoord2d(0.0, 0.0);
-						gl.glVertex2d(-size, -size);
-
 						gl.glTexCoord2d(1.0, 0.0);
-						gl.glVertex2d( + size, -size);
+						gl.glVertex2d( - size, - size);
 
-						gl.glTexCoord2d(1.0, 1.0);
-						gl.glVertex2d( + size, + size);
+						gl.glTexCoord2d(0.0, 0.0);
+						gl.glVertex2d( + size, - size);
 
 						gl.glTexCoord2d(0.0, 1.0);
-						gl.glVertex2d(-size, + size);
+						gl.glVertex2d( + size, + size);
+
+						gl.glTexCoord2d(1.0, 1.0);
+						gl.glVertex2d( - size, + size);
 						gl.glEnd();
 
 						gl.glPopMatrix();
@@ -854,12 +854,13 @@ class Smoke {
 		public void init(GLAutoDrawable drawable) {
 			GL gl = drawable.getGL();
 			gl.setSwapInterval(1); //Meh seems NOP in linux :(
-			gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
+// 			gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA);
 
 			/* Load static textures */
 			try {
 				BufferedImage image = null;
-				image = (BufferedImage)ImageIO.read(new File("arrow.png"));
+				image = (BufferedImage)ImageIO.read(new File("arrow-2.png"));
 				int[]  iarray = image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
 				for (int i = 0; i < image.getWidth() * image.getHeight() ; ++i) {
 					int c = iarray[i];
@@ -867,7 +868,7 @@ class Smoke {
 					int g = ((c >>  8) & 0xff);
 					int b = ((c >>  0) & 0xff);
 					int a = ((c >> 24) & 0xff);//*/
-					iarray[i] = (r << 24) | (g << 16) | (b << 8) | (a << 0);
+					iarray[i] = (r << 0) | (g << 8) | (b << 16) | (a << 24);
 				}
 				IntBuffer buffer = IntBuffer.wrap(iarray);
 				textures[1] = createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
