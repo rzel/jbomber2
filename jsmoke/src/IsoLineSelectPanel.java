@@ -58,7 +58,7 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
         return isoLineColor;
     }
     
-    public boolean getUpdateIsoTeture() {
+    public boolean getUpdateIsoTexture() {
         boolean ret = updateIsoTexture;
         updateIsoTexture = false;
         return ret;
