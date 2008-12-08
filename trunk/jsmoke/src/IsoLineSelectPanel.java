@@ -28,6 +28,8 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
     private int dataset   = DATASET_RHO;
     private int scalemode = SCALE_SCALE;
     
+    private boolean updateIsoTexture = true;
+    
     public IsoLineSelectPanel(JFrame frame) {
 	setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));        
         add(initDatasetSelectPanel());
@@ -54,6 +56,12 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
     
     public float[] getIsoLineColor() {
         return isoLineColor;
+    }
+    
+    public boolean getUpdateIsoTeture() {
+        boolean ret = updateIsoTexture;
+        updateIsoTexture = false;
+        return ret;
     }
     
     private JPanel initDatasetSelectPanel() {
@@ -185,6 +193,7 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
             ((Color)e.getSource()).getColorComponents(isoLineColor);
             colorLabel.setForeground((Color)e.getSource());
             colorLabel.repaint();
+            updateIsoTexture = true;
         }
     }
 }
