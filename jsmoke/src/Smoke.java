@@ -53,8 +53,9 @@ class Smoke {
 	int   winWidth, winHeight;     //size of the graphics window, in pixels
 	int   color_dir = 0;           //use direction color-coding or not
 	float vec_scale = 1000;        //scaling of hedgehogs
-	boolean   draw_smoke = true;  //draw the smoke or not
-	boolean   draw_vecs = false;    //draw the vector field or not
+	boolean draw_smoke     = true;  //draw the smoke or not
+	boolean draw_vecs      = false;    //draw the vector field or not
+        boolean draw_iso_lines = false;    //draw the iso lines or not
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
@@ -63,6 +64,7 @@ class Smoke {
 
 	private ColormapSelectPanel smokeColormapSelectPanel;
 	private VectorOptionSelectPanel vectorOptionSelectPanel;
+        private IsoLineSelectPanel isoLineSelectPanel;
 	//------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
 	/**init_simulation: Initialize simulation data structures as a function of the grid size 'n'.
@@ -689,16 +691,24 @@ class Smoke {
 		vectorButton.setSelected(true);
 		vectorButton.addActionListener(new SmokeSelectorListener());
 
+		JCheckBox isoLineButton = new JCheckBox("Iso lines");
+		isoLineButton.setMnemonic(KeyEvent.VK_I);
+		isoLineButton.setActionCommand("ISO_LINE_TOGGLE");
+		isoLineButton.setSelected(true);
+		isoLineButton.addActionListener(new SmokeSelectorListener());
+                
 		JPanel smokeSelectPanel = new JPanel();
 		smokeSelectPanel.setLayout(new GridLayout(3, 1));
 		smokeSelectPanel.setBorder(new TitledBorder("Visualizations"));
 		smokeSelectPanel.add(smokeButton);
 		smokeSelectPanel.add(vectorButton);
+		smokeSelectPanel.add(isoLineButton);
 
 		smokeButton.setSelected(true);
-		vectorButton.setSelected(true);
+		vectorButton.setSelected(false);
 		draw_smoke = true;
-		draw_vecs = true;
+		draw_vecs = false;
+                draw_iso_lines = true;
 
 		smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));
 		smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -753,7 +763,14 @@ class Smoke {
 
 	private JComponent initOptionPanel(JFrame frame) {
 		JTabbedPane tabPane = new JTabbedPane();
-
+                
+		JPanel SimulationOptionPanel = new JPanel();
+		SimulationOptionPanel.setLayout(new BoxLayout(SimulationOptionPanel, BoxLayout.Y_AXIS));
+		SimulationOptionPanel.add(initSimOnOffPanel());
+		SimulationOptionPanel.add(initSmokeSelectPanel());
+		SimulationOptionPanel.add(initSimParamsPanel());
+		tabPane.addTab("Simulation options", SimulationOptionPanel);
+                
 		// Initialize option panel
 		smokeColormapSelectPanel = new ColormapSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
 		tabPane.addTab("Smoke options", smokeColormapSelectPanel);
@@ -761,12 +778,8 @@ class Smoke {
 		vectorOptionSelectPanel = new VectorOptionSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
 		tabPane.addTab("Vector options", vectorOptionSelectPanel);
 
-		JPanel SimulationOptionPanel = new JPanel();
-		SimulationOptionPanel.setLayout(new BoxLayout(SimulationOptionPanel, BoxLayout.Y_AXIS));
-		SimulationOptionPanel.add(initSimOnOffPanel());
-		SimulationOptionPanel.add(initSmokeSelectPanel());
-		SimulationOptionPanel.add(initSimParamsPanel());
-		tabPane.addTab("Simulation options", SimulationOptionPanel);
+                isoLineSelectPanel = new IsoLineSelectPanel(frame);
+                tabPane.addTab("ISO line options", isoLineSelectPanel);
 
 		tabPane.setSelectedIndex(1);
 		return tabPane;
