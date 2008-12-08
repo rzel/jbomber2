@@ -59,7 +59,7 @@ class Smoke {
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
 	boolean frozen = false;         //toggles on/off the animation
-	int[] textures = new int[2];
+	int[] textures = new int[4];
 
 	private ColormapSelectPanel smokeColormapSelectPanel;
 	private VectorOptionSelectPanel vectorOptionSelectPanel;
@@ -317,9 +317,13 @@ class Smoke {
 		double gridy = vectorOptionSelectPanel.getVectorGridY();
 		double cells_per_sample_x = DIM / gridx;
 		double cells_per_sample_y = DIM / gridy;
-		double x_sample_centre_pos = ((x+1) / (gridx+1)) * DIM;
-		double y_sample_centre_pos = ((y+1) / (gridy+1)) * DIM;
+		double dim = (double)DIM;
+		double x_sample_centre_pos = (dim/(gridx+1))*(x+1);//((x+1) / (gridx+1)) * DIM;
+		double y_sample_centre_pos = (dim/(gridy+1))*(y+1);//((y+1) / (gridy+1)) * DIM;
 
+		//
+		// 2           4           6           8         10           12
+		//   2.66 3.33   4.66 5.33   6.66 7.33 ..
 
 
 		double weight_sx  = 0.5 - Math.sqrt(((x_sample_centre_pos - (int)x_sample_centre_pos) - 0.5)
@@ -329,8 +333,8 @@ class Smoke {
 		double weight_nnx = 1.0 - weight_sx;
 		double weight_nny = 1.0 - weight_sy;
 
-		int nearest_neighbour_x = (int)(1.5 * ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
-		int nearest_neighbour_y = (int)(1.5 * ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_x = (int)(/*1.5 **/ ((int)((x_sample_centre_pos - (int)x_sample_centre_pos) + 0.5)) - 1.0);
+		int nearest_neighbour_y = (int)(/*1.5 **/ ((int)((y_sample_centre_pos - (int)y_sample_centre_pos) + 0.5)) - 1.0);
 
 		double avgs = 0.0;
 		double avgx = 0.0;
@@ -444,7 +448,7 @@ class Smoke {
 					}
 				gl.glEnd();
 			} else if (vector_type == VECTOR_TYPE_ARROW) {
-				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[1]);
+				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[3]);
 				gl.glDisable(gl.GL_TEXTURE_1D);
 				gl.glEnable(gl.GL_TEXTURE_2D);
 				gl.glEnable(gl.GL_BLEND);
@@ -499,38 +503,6 @@ class Smoke {
 				gl.glPopMatrix();
 			}
 		}
-
-
-
-
-
-
-
-		/*
-						//HACKERDEHHACLK
-						gl.glBindTexture(gl.GL_TEXTURE_2D, textures[1]);
-						gl.glDisable(gl.GL_TEXTURE_1D);
-						gl.glEnable(gl.GL_TEXTURE_2D);
-						gl.glEnable(gl.GL_BLEND);
-						gl.glBegin(GL.GL_QUADS);
-							gl.glTexCoord2d(0.0, 0.0);
-							gl.glVertex2d(0.0, 0.0);
-
-							gl.glTexCoord2d(1.0, 0.0);
-							gl.glVertex2d(400.0, 0.0);
-
-							gl.glTexCoord2d(1.0, 1.0);
-							gl.glVertex2d(400.0, 400.0);
-
-							gl.glTexCoord2d(0.0, 1.0);
-							gl.glVertex2d(0.0, 400.0);
-						gl.glEnd();*/
-//*/
-
-
-
-
-
 
 		gl.glFlush(); // forces all opengl commands to complete. Blocking!!
 		++avg_fc;
@@ -656,7 +628,7 @@ class Smoke {
 		simOnButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				frozen = false;
-                                panel.repaint(50);                                
+                                panel.repaint(50);
 			}
 		});
 
@@ -859,11 +831,17 @@ class Smoke {
 			gl.setSwapInterval(1); //Meh seems NOP in linux :(
 // 			gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA);
+			textures[1] = loadTexture(gl, "arrow-1.png");
+			textures[2] = loadTexture(gl, "arrow-2.png");
+			textures[3] = loadTexture(gl, "arrow-3.png");
+		}
 
+		public int loadTexture(GL gl, String fileName) {
 			/* Load static textures */
+			int texture = 0;
 			try {
 				BufferedImage image = null;
-				image = (BufferedImage)ImageIO.read(new File("arrow-2.png"));
+				image = (BufferedImage)ImageIO.read(new File(fileName));
 				int[]  iarray = image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
 				for (int i = 0; i < image.getWidth() * image.getHeight() ; ++i) {
 					int c = iarray[i];
@@ -874,28 +852,17 @@ class Smoke {
 					iarray[i] = (r << 0) | (g << 8) | (b << 16) | (a << 24);
 				}
 				IntBuffer buffer = IntBuffer.wrap(iarray);
-				textures[1] = createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
+				texture = createTextureFromBuffer(gl, buffer, gl.GL_RGBA, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, gl.GL_TEXTURE_2D, image.getWidth(), image.getHeight());
 				gl.glTexParameteri(gl.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
 				gl.glTexParameteri(gl.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
+				return texture;
 			} catch (Exception ex) {
 				System.out.println("Error while loading textures:");
 				System.out.println(ex.getMessage() + " / " + ex.toString());
 				//ex.printStackTrace();
 				System.exit(1);
 			}
-		}
-
-		public Texture loadTexture(String fileName) {
-			Texture text = null;
-			try {
-				text = TextureIO.newTexture(new File(fileName), false);
-				text.setTexParameteri(GL.GL_TEXTURE_MAG_FILTER, GL.GL_LINEAR);
-				text.setTexParameteri(GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
-			} catch (Exception e) {
-				System.out.println(e.getMessage());
-				System.out.println("Error loading texture " + fileName);
-			}
-			return text;
+			return texture;
 		}
 
 		public void display(GLAutoDrawable drawable) {
