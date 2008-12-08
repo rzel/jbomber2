@@ -60,7 +60,7 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
     
     public boolean getUpdateIsoTexture() {
         boolean ret = updateIsoTexture;
-        updateIsoTexture = false;
+        //updateIsoTexture = false;
         return ret;
     }
     
@@ -186,6 +186,8 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
         } else if (e.getActionCommand().equals("CHANGE_COLOR")) {
             colorselector.setVisible(true);
         }
+        
+        updateIsoTexture = true;        
     }
     
     public void stateChanged(ChangeEvent e) {
