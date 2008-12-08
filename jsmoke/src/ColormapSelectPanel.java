@@ -15,10 +15,13 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	public static final int COLOR_DEFINED   = 4;
 	public static final int COLOR_CUSTOM    = 8;
 
-	public static final int DATASET_RHO = 1;
-	public static final int DATASET_F   = 2;
-	public static final int DATASET_V   = 4;
-
+	public static final int DATASET_RHO   = 1;
+	public static final int DATASET_F     = 2;
+	public static final int DATASET_V     = 4;
+        public static final int DATASET_F_DIV = 8;
+        public static final int DATASET_V_DIV = 16;
+        
+        
 	public static final int SCALE_CLAMP = 1;
 	public static final int SCALE_SCALE = 2;
 
@@ -144,17 +147,21 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand() == "SET_DATASET_RHO") {
+		if (e.getActionCommand().equals("SET_DATASET_RHO")) {
 			dataset = DATASET_RHO;
-		} else if (e.getActionCommand() == "SET_DATASET_F") {
+		} else if (e.getActionCommand().equals("SET_DATASET_F")) {
 			dataset = DATASET_F;
-		} else if (e.getActionCommand() == "SET_DATASET_V") {
+		} else if (e.getActionCommand().equals("SET_DATASET_V_DIV")) {
+			dataset = DATASET_V_DIV;
+		} else if (e.getActionCommand().equals("SET_DATASET_F_DIV")) {
+			dataset = DATASET_F_DIV;
+		} else if (e.getActionCommand().equals("SET_DATASET_V")) {
 			dataset = DATASET_V;
-		} else if (e.getActionCommand() == "SET_SCALE_CLAMP") {
+		} else if (e.getActionCommand().equals("SET_SCALE_CLAMP")) {
 			scalemode ^= SCALE_CLAMP;
-		} else if (e.getActionCommand() == "SET_SCALE_SCALE") {
+		} else if (e.getActionCommand().equals("SET_SCALE_SCALE")) {
 			scalemode ^= SCALE_SCALE;
-		} else if (e.getActionCommand() == "SET_RAINBOW") {
+		} else if (e.getActionCommand().equals("SET_RAINBOW")) {
 			float[][] colors = new float[2048][3];
 
 			for (int i = 0; i < colors.length; ++i) {
@@ -162,7 +169,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 			colormap = COLOR_RAINBOW;
 			colorPreviewSlider.setColors(colors, colorCount);
-		} else if (e.getActionCommand() == "SET_GRAYSCALE") {
+		} else if (e.getActionCommand().equals("SET_GRAYSCALE")) {
 			float[][] colors = new float[2048][3];
 
 			for (int i = 0; i < colors.length; ++i) {
@@ -170,7 +177,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 			colormap = COLOR_GRAYSCALE;
 			colorPreviewSlider.setColors(colors, colorCount);
-		} else if (e.getActionCommand() == "SET_DEFINED") {
+		} else if (e.getActionCommand().equals("SET_DEFINED")) {
 			float[][] colors = new float[2048][3];
 			final int NLEVELS = 7;
 
@@ -181,7 +188,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 			colormap = COLOR_DEFINED;
 			colorPreviewSlider.setColors(colors, colorCount);
-		} else if (e.getActionCommand() == "SET_CUSTOM") {
+		} else if (e.getActionCommand().equals("SET_CUSTOM")) {
 			colormap = COLOR_CUSTOM;
 			colorPreviewSlider.setColors(custom_gradient_cache, colorCount);
 		} else if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
@@ -251,10 +258,20 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		vButton.addActionListener(this);
 		vButton.setActionCommand("SET_DATASET_V");
 
+		JRadioButton dvButton = new JRadioButton("div(v)");
+		dvButton.addActionListener(this);
+		dvButton.setActionCommand("SET_DATASET_V_DIV");
+
+		JRadioButton dfButton = new JRadioButton("div(f)");
+		dfButton.addActionListener(this);
+		dfButton.setActionCommand("SET_DATASET_F_DIV");                
+                
 		ButtonGroup datasetSelectGroup = new ButtonGroup();
 		datasetSelectGroup.add(rhoButton);
 		datasetSelectGroup.add(fButton);
 		datasetSelectGroup.add(vButton);
+		datasetSelectGroup.add(dfButton);
+		datasetSelectGroup.add(dvButton);
 
 		JPanel datasetSelectPanel = new JPanel();
 		datasetSelectPanel.setLayout(new BoxLayout(datasetSelectPanel, BoxLayout.X_AXIS));
@@ -263,6 +280,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		datasetSelectPanel.add(rhoButton);
 		datasetSelectPanel.add(fButton);
 		datasetSelectPanel.add(vButton);
+		datasetSelectPanel.add(dfButton);
+		datasetSelectPanel.add(dvButton);
 		return datasetSelectPanel;
 	}
 

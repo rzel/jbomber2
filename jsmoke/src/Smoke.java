@@ -240,6 +240,21 @@ class Smoke {
 		}
 		gl.glColor3f(r, g, b);
 	}
+        
+        private int[] getXYFromIdx(int idx) {
+            int y = idx / DIM;
+            int x = idx - (DIM * y);
+            return new int[] {x, y};
+        }
+        
+        private int getIdxFromXY(int x, int y) {
+            if ((x < 0) || (y < 0)) {
+                System.err.println("FAIL");
+            }
+            x = (x + DIM) % DIM;
+            y = (y + DIM) % DIM;
+            return (x + (y * DIM));
+        }
 
 	private float getDatasetColor(int idx, ColormapSelectPanel panel) {
 		float dataset_value = 0.0f;
@@ -253,6 +268,18 @@ class Smoke {
 			case ColormapSelectPanel.DATASET_V:
 				dataset_value = (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
 				break;
+			case ColormapSelectPanel.DATASET_F_DIV: {
+                                int[] pos = getXYFromIdx(idx);
+                                double div = 0.5* ((fx[getIdxFromXY(pos[0] - 1, pos[1])] - fx[getIdxFromXY(pos[0] + 1, pos[1])]) + 
+                                                   (fy[getIdxFromXY(pos[0], pos[1] - 1)] - fy[getIdxFromXY(pos[0], pos[1] + 1)]));
+                                dataset_value = (float)div;
+                                } break;
+			case ColormapSelectPanel.DATASET_V_DIV: {
+                                int[] pos = getXYFromIdx(idx);
+                                double div = 0.5* ((vx[getIdxFromXY(pos[0] - 1, pos[1])] - vx[getIdxFromXY(pos[0] + 1, pos[1])]) + 
+                                                   (vy[getIdxFromXY(pos[0], pos[1] - 1)] - vy[getIdxFromXY(pos[0], pos[1] + 1)]));
+                                dataset_value = (float)div;
+                                } break;
 		}
 
 		// Clamp
@@ -287,13 +314,13 @@ class Smoke {
 		double[][] vectors = {
 		                     {-Math.sqrt(2), Math.sqrt(2)},
 		                     {0.0f, 1.0f},
-												 {Math.sqrt(2), Math.sqrt(2)},
-												 {1.0f, 0.0f},
-												 {Math.sqrt(2), -Math.sqrt(2)},
-												 {0.0f, -1.0f},
-												 {-Math.sqrt(2), -Math.sqrt(2)},
-												 {-1.0f, 0.0f},
-												 };
+                                     {Math.sqrt(2), Math.sqrt(2)},
+                                     {1.0f, 0.0f},
+				     {Math.sqrt(2), -Math.sqrt(2)},
+				     {0.0f, -1.0f},
+				     {-Math.sqrt(2), -Math.sqrt(2)},
+				     {-1.0f, 0.0f},
+				     };
 
 		for(int x = 0 ; x < DIM; ++x) {
 			for(int y = 0 ; y < DIM; ++y) {
