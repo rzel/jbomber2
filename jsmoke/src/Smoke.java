@@ -35,6 +35,7 @@ import java.io.*;
  *        the velocity field at the mouse location. Press the indicated keys to change options
  */
 class Smoke {
+	boolean updateisotexture = true;
 	static RFFTWLibrary RFFTW = (RFFTWLibrary)Native.loadLibrary("rfftw", RFFTWLibrary.class);
 
 //--- SIMULATION PARAMETERS ------------------------------------------------------------------------
@@ -60,7 +61,12 @@ class Smoke {
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
 	boolean frozen = false;         //toggles on/off the animation
-	int[] textures = new int[4];
+	private static int TEXTURE_COLORMAP = 0;
+	private static int TEXTURE_ARROW_1  = 1;
+	private static int TEXTURE_ARROW_2  = 2;
+	private static int TEXTURE_ARROW_3  = 3;
+	private static int TEXTURE_ISOLINES = 4;
+	int[] textures = new int[5];
 
 	private ColormapSelectPanel smokeColormapSelectPanel;
 	private VectorOptionSelectPanel vectorOptionSelectPanel;
@@ -242,13 +248,13 @@ class Smoke {
 		}
 		gl.glColor3f(r, g, b);
 	}
-        
+
         private int[] getXYFromIdx(int idx) {
             int y = idx / DIM;
             int x = idx - (DIM * y);
             return new int[] {x, y};
         }
-        
+
         private int getIdxFromXY(int x, int y) {
             x = (x + DIM) % DIM;
             y = (y + DIM) % DIM;
@@ -269,13 +275,13 @@ class Smoke {
 				break;
 			case ColormapSelectPanel.DATASET_F_DIV: {
                                 int[] pos = getXYFromIdx(idx);
-                                double div = 0.5* ((fx[getIdxFromXY(pos[0] - 1, pos[1])] - fx[getIdxFromXY(pos[0] + 1, pos[1])]) + 
+                                double div = 0.5* ((fx[getIdxFromXY(pos[0] - 1, pos[1])] - fx[getIdxFromXY(pos[0] + 1, pos[1])]) +
                                                    (fy[getIdxFromXY(pos[0], pos[1] - 1)] - fy[getIdxFromXY(pos[0], pos[1] + 1)]));
                                 dataset_value = (float)div;
                                 } break;
 			case ColormapSelectPanel.DATASET_V_DIV: {
                                 int[] pos = getXYFromIdx(idx);
-                                double div = 0.5* ((vx[getIdxFromXY(pos[0] - 1, pos[1])] - vx[getIdxFromXY(pos[0] + 1, pos[1])]) + 
+                                double div = 0.5* ((vx[getIdxFromXY(pos[0] - 1, pos[1])] - vx[getIdxFromXY(pos[0] + 1, pos[1])]) +
                                                    (vy[getIdxFromXY(pos[0], pos[1] - 1)] - vy[getIdxFromXY(pos[0], pos[1] + 1)]));
                                 dataset_value = (float)div;
                                 } break;
@@ -422,7 +428,8 @@ class Smoke {
 
 		gl.glDisable(gl.GL_TEXTURE_2D);
 		gl.glEnable(gl.GL_TEXTURE_1D);
-		gl.glBindTexture(gl.GL_TEXTURE_1D, textures[0]);
+		gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP]);
+		gl.glDisable(gl.GL_BLEND);
 
 		if (draw_smoke) {
 			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
@@ -527,6 +534,46 @@ class Smoke {
 					}
 				}
 				gl.glPopMatrix();
+			}
+		}
+
+		boolean draw_isolines = true;
+		if(draw_isolines) {
+			gl.glEnable(gl.GL_BLEND);
+			gl.glDisable(gl.GL_TEXTURE_2D);
+			gl.glEnable(gl.GL_TEXTURE_1D);
+			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_ISOLINES]);
+			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
+			for (j = 0; j < DIM - 1; j++) {		//draw smoke
+				gl.glBegin(GL.GL_TRIANGLE_STRIP);
+
+				i = 0;
+				px = wn + (float)i * wn;
+				py = hn + (float)j * hn;
+				idx = (j * DIM) + i;
+				gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+				gl.glVertex2d(px, py);
+
+				for (i = 0; i < DIM - 1; i++) {
+					px = wn + i * wn;
+					py = hn + (j + 1) * hn;
+					idx = ((j + 1) * DIM) + i;
+
+					gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+					gl.glVertex2d(px, py);
+					px = wn + (i + 1) * wn;
+					py = hn + j * hn;
+					idx = (j * DIM) + (i + 1);
+					gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+					gl.glVertex2d(px, py);
+				}
+
+				px = wn + (float)(DIM - 1) * wn;
+				py = hn + (float)(j + 1) * hn;
+				idx = ((j + 1) * DIM) + (DIM - 1);
+				gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+				gl.glVertex2d(px, py);
+				gl.glEnd();
 			}
 		}
 
@@ -696,7 +743,7 @@ class Smoke {
 		isoLineButton.setActionCommand("ISO_LINE_TOGGLE");
 		isoLineButton.setSelected(true);
 		isoLineButton.addActionListener(new SmokeSelectorListener());
-                
+
 		JPanel smokeSelectPanel = new JPanel();
 		smokeSelectPanel.setLayout(new GridLayout(3, 1));
 		smokeSelectPanel.setBorder(new TitledBorder("Visualizations"));
@@ -763,14 +810,14 @@ class Smoke {
 
 	private JComponent initOptionPanel(JFrame frame) {
 		JTabbedPane tabPane = new JTabbedPane();
-                
+
 		JPanel SimulationOptionPanel = new JPanel();
 		SimulationOptionPanel.setLayout(new BoxLayout(SimulationOptionPanel, BoxLayout.Y_AXIS));
 		SimulationOptionPanel.add(initSimOnOffPanel());
 		SimulationOptionPanel.add(initSmokeSelectPanel());
 		SimulationOptionPanel.add(initSimParamsPanel());
 		tabPane.addTab("Simulation options", SimulationOptionPanel);
-                
+
 		// Initialize option panel
 		smokeColormapSelectPanel = new ColormapSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
 		tabPane.addTab("Smoke options", smokeColormapSelectPanel);
@@ -924,6 +971,70 @@ class Smoke {
 				textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
 				texture_fill = (float)((ncolors + 1) / (double)nextPowerOfTwo(ncolors + 1));
 				smokeColormapSelectPanel.setUpdateGradientTexture(true);
+			}
+
+// 			if (isolineSelectPanel.getUpdateGradientTexture()) {
+			if(isoLineSelectPanel.getUpdateIsoTexture()) {
+				double iso_low_value  = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.getMinIsoValue()));
+				double iso_high_value = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.getMaxIsoValue()));
+				System.out.println("iso_low_value="+iso_low_value);
+				System.out.println("iso_high_value="+iso_high_value);
+				double wn = winWidth / (double)(DIM + 1);   // Grid cell width
+				double hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
+				double nn = Math.max(wn,hn);
+				int    iso_tex_size   = 2048;//Math.min(nextPowerOfTwo((int)nn), 2048);
+				int    iso_min_texels = (int)(iso_tex_size/nn/(20.0/9.0)+0.5);
+
+				System.out.println("iso_min_texels="+iso_min_texels);
+				System.out.println("nn="+nn);
+
+				double iso_n_texels      = ((iso_high_value - iso_low_value) * iso_tex_size);
+				double iso_n_low_texels  = (iso_low_value                    * iso_tex_size);
+				double iso_n_high_texels = ((1.0-iso_high_value)             * iso_tex_size);
+
+// 				System.out.println("iso_n_low_texels="+iso_n_low_texels);
+// 				System.out.println("iso_n_high_texels="+iso_n_high_texels);
+// 				System.out.println("iso_n_texels="+iso_n_texels);
+// 				System.out.println("iso_tex_size="+iso_tex_size);
+
+				if(iso_n_texels < iso_min_texels ) {
+					System.out.println("Adjust");
+					double  diff = iso_min_texels - iso_n_texels;
+					iso_n_low_texels  -= (diff/2.0);
+					iso_n_high_texels -= (diff/2.0);
+					iso_n_texels = iso_min_texels;
+				}
+
+// 				System.out.println("iso_n_low_texels="+iso_n_low_texels);
+// 				System.out.println("iso_n_high_texels="+iso_n_high_texels);
+// 				System.out.println("iso_n_texels="+iso_n_texels);
+// 				System.out.println("iso_tex_size="+iso_tex_size);
+
+				if(iso_n_low_texels + iso_n_texels + iso_n_high_texels > iso_tex_size) {
+					System.out.println("Error: texture size exceeded");
+					return;
+				}
+
+				float[] intermediate_texbuf = new float[2048*4];
+				float[] fc = {1.0f , 0.0f , 1.0f , 0.0f};
+				for(int i = 0 ; i < 2048*4; i+=4) {
+					intermediate_texbuf[i+0] = fc[0];
+					intermediate_texbuf[i+1] = fc[1];
+					intermediate_texbuf[i+2] = fc[2];
+					intermediate_texbuf[i+3] = fc[3];
+				}
+
+				fc = new float[]{1.0f, 0.0f , 1.0f , 1.0f};
+				for(int i = 4*(int)(iso_n_low_texels+0.5); i < 4*(int)(iso_n_low_texels+iso_n_texels+0.5); i+=4) {
+					intermediate_texbuf[i+0] = fc[0];
+					intermediate_texbuf[i+1] = fc[1];
+					intermediate_texbuf[i+2] = fc[2];
+					intermediate_texbuf[i+3] = fc[3];
+				}
+
+				FloatBuffer texture_data = FloatBuffer.wrap(intermediate_texbuf);//BufferUtil.newFloatBuffer(iso_tex_size*4);
+				textures[TEXTURE_ISOLINES] = createTextureFromBuffer(gl, texture_data, gl.GL_RGBA, gl.GL_RGBA, gl.GL_FLOAT, gl.GL_TEXTURE_1D, iso_tex_size, 1);
+				updateisotexture = false;
 			}
 
 

@@ -20,8 +20,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	public static final int DATASET_V     = 4;
         public static final int DATASET_F_DIV = 8;
         public static final int DATASET_V_DIV = 16;
-        
-        
+
+
 	public static final int SCALE_CLAMP = 1;
 	public static final int SCALE_SCALE = 2;
 
@@ -44,7 +44,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	private boolean update_gradient_texture;
 
 	private UnboundedDoubleSpinnerModel minClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(0.0);
-	private UnboundedDoubleSpinnerModel maxClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);            
+	private UnboundedDoubleSpinnerModel maxClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);
         private float[][] custom_gradient_cache = new float[2048][3];
 	int custom_gradient_interpolate_mode = 0;
 
@@ -264,8 +264,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
 		JRadioButton dfButton = new JRadioButton("div(f)");
 		dfButton.addActionListener(this);
-		dfButton.setActionCommand("SET_DATASET_F_DIV");                
-                
+		dfButton.setActionCommand("SET_DATASET_F_DIV");
+
 		ButtonGroup datasetSelectGroup = new ButtonGroup();
 		datasetSelectGroup.add(rhoButton);
 		datasetSelectGroup.add(fButton);
@@ -509,6 +509,22 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		tablemodelcolors.addRow(o);
 		o[0] = new Color(255, 0, 255);
 		tablemodelcolors.addRow(o);
+
+// 		for(int i=0; i < 512; ++i) {
+// 			o[0] = new Color(0, 0, 0);
+// 			tablemodelcolors.addRow(o);
+// 		}
+//
+// 		for(int i=0; i < 128; ++i) {
+// 			o[0] = new Color(255, 255, 255);
+// 			tablemodelcolors.addRow(o);
+// 		}
+//
+// 		for(int i=0; i < 512; ++i) {
+// 			o[0] = new Color(0, 0, 0);
+// 			tablemodelcolors.addRow(o);
+// 		}
+
 		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 		generate_custom_gradient_cache();
 
