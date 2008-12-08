@@ -248,9 +248,6 @@ class Smoke {
         }
         
         private int getIdxFromXY(int x, int y) {
-            if ((x < 0) || (y < 0)) {
-                System.err.println("FAIL");
-            }
             x = (x + DIM) % DIM;
             y = (y + DIM) % DIM;
             return (x + (y * DIM));
