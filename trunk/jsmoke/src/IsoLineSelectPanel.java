@@ -22,7 +22,7 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
     
     private ColorSelector colorselector;    
     
-    private float[] isoLineColor = {1.0f, 1.0f, 1.0f};
+    private float[] isoLineColor = {0.0f, 0.0f, 0.0f};
     private JLabel  colorLabel   = new JLabel("Current color");
     
     private int dataset   = DATASET_RHO;
@@ -36,6 +36,9 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
 	add(initScalingSelectPanel());
         add(initIsoValuesSelectPanel());
         add(initIsoColorSelectPanel(frame));
+        
+        minIsoValueSpinnerModel.setValue(new Double(0.6));
+        maxIsoValueSpinnerModel.setValue(new Double(0.6));
     }
 
     public int getDataset() {
@@ -58,9 +61,12 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
         return isoLineColor;
     }
     
+    public void setUpdateIsoTexture(boolean value) {
+        updateIsoTexture = value;
+    }
+    
     public boolean getUpdateIsoTexture() {
         boolean ret = updateIsoTexture;
-        //updateIsoTexture = false;
         return ret;
     }
     
@@ -192,7 +198,7 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
     
     public void stateChanged(ChangeEvent e) {
         if(e.getSource().getClass().getName().equals("java.awt.Color")) {
-            ((Color)e.getSource()).getColorComponents(isoLineColor);
+            isoLineColor = ((Color)e.getSource()).getColorComponents(isoLineColor);
             colorLabel.setForeground((Color)e.getSource());
             colorLabel.repaint();
             updateIsoTexture = true;
