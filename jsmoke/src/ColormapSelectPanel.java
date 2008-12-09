@@ -18,9 +18,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	public static final int DATASET_RHO   = 1;
 	public static final int DATASET_F     = 2;
 	public static final int DATASET_V     = 4;
-        public static final int DATASET_F_DIV = 8;
-        public static final int DATASET_V_DIV = 16;
-
+	public static final int DATASET_F_DIV = 8;
+	public static final int DATASET_V_DIV = 16;
 
 	public static final int SCALE_CLAMP = 1;
 	public static final int SCALE_SCALE = 2;
