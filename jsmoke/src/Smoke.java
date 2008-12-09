@@ -1016,7 +1016,8 @@ class Smoke {
 				}
 
 				float[] intermediate_texbuf = new float[2048*4];
-				float[] fc = {1.0f , 0.0f , 1.0f , 0.0f};
+                                float[] ic = isoLineSelectPanel.getIsoLineColor();
+				float[] fc = {ic[0] , ic[1] , ic[2] , 0.0f};
 				for(int i = 0 ; i < 2048*4; i+=4) {
 					intermediate_texbuf[i+0] = fc[0];
 					intermediate_texbuf[i+1] = fc[1];
@@ -1024,7 +1025,7 @@ class Smoke {
 					intermediate_texbuf[i+3] = fc[3];
 				}
 
-				fc = new float[]{1.0f, 0.0f , 1.0f , 1.0f};
+				fc = new float[]{ic[0] , ic[1] , ic[2] , 1.0f};
 				for(int i = 4*(int)(iso_n_low_texels+0.5); i < 4*(int)(iso_n_low_texels+iso_n_texels+0.5); i+=4) {
 					intermediate_texbuf[i+0] = fc[0];
 					intermediate_texbuf[i+1] = fc[1];
