@@ -56,17 +56,19 @@ class Smoke {
 	float vec_scale = 1000;        //scaling of hedgehogs
 	boolean draw_smoke     = true;  //draw the smoke or not
 	boolean draw_vecs      = false;    //draw the vector field or not
-        boolean draw_iso_lines = false;    //draw the iso lines or not
+	boolean draw_iso_lines = false;    //draw the iso lines or not
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
 	boolean frozen = false;         //toggles on/off the animation
-	private static int TEXTURE_COLORMAP = 0;
-	private static int TEXTURE_ARROW_1  = 1;
-	private static int TEXTURE_ARROW_2  = 2;
-	private static int TEXTURE_ARROW_3  = 3;
-	private static int TEXTURE_COUNT    = 4;
-	int[] textures = new int[TEXTURE_COUNT];
+	private static int TEXTURE_COLORMAP_SMOKE    = 0;
+	private static int TEXTURE_COLORMAP_ISOLINES = 1;
+	private static int TEXTURE_ARROW_1           = 2;
+	private static int TEXTURE_ARROW_2           = 3;
+	private static int TEXTURE_ARROW_3           = 4;
+	private static int TEXTURE_COUNT             = 5;
+	int[] textures        = new int[TEXTURE_COUNT];
+	double[] texture_fill = new double[TEXTURE_COUNT];
 
 	int[][] msquare_lookup = {
 		{-1, -1, -1, -1, -1},   // 0: Case 0
@@ -270,17 +272,17 @@ class Smoke {
 		gl.glColor3f(r, g, b);
 	}
 
-        private int[] getXYFromIdx(int idx) {
-            int y = idx / DIM;
-            int x = idx - (DIM * y);
-            return new int[] {x, y};
-        }
+	private int[] getXYFromIdx(int idx) {
+			int y = idx / DIM;
+			int x = idx - (DIM * y);
+			return new int[] {x, y};
+	}
 
-        private int getIdxFromXY(int x, int y) {
-            x = (x + DIM) % DIM;
-            y = (y + DIM) % DIM;
-            return (x + (y * DIM));
-        }
+	private int getIdxFromXY(int x, int y) {
+			x = (x + DIM) % DIM;
+			y = (y + DIM) % DIM;
+			return (x + (y * DIM));
+	}
 
 	private float getDatasetColor(int idx, ColormapSelectPanel panel) {
 		float dataset_value = 0.0f;
@@ -295,17 +297,17 @@ class Smoke {
 				dataset_value = (float)Math.sqrt(vx[idx] * vx[idx] + vy[idx] * vy[idx]) * DIM;
 				break;
 			case ColormapSelectPanel.DATASET_F_DIV: {
-                                int[] pos = getXYFromIdx(idx);
-                                double div = 0.5* ((fx[getIdxFromXY(pos[0] - 1, pos[1])] - fx[getIdxFromXY(pos[0] + 1, pos[1])]) +
-                                                   (fy[getIdxFromXY(pos[0], pos[1] - 1)] - fy[getIdxFromXY(pos[0], pos[1] + 1)]));
-                                dataset_value = (float)div;
-                                } break;
+				int[] pos = getXYFromIdx(idx);
+				double div = 0.5 * ((fx[getIdxFromXY(pos[0] - 1, pos[1])] - fx[getIdxFromXY(pos[0] + 1, pos[1])])
+				                 + (fy[getIdxFromXY(pos[0], pos[1] - 1)] - fy[getIdxFromXY(pos[0], pos[1] + 1)]));
+				dataset_value = (float)div;
+				}; break;
 			case ColormapSelectPanel.DATASET_V_DIV: {
-                                int[] pos = getXYFromIdx(idx);
-                                double div = 0.5* ((vx[getIdxFromXY(pos[0] - 1, pos[1])] - vx[getIdxFromXY(pos[0] + 1, pos[1])]) +
-                                                   (vy[getIdxFromXY(pos[0], pos[1] - 1)] - vy[getIdxFromXY(pos[0], pos[1] + 1)]));
-                                dataset_value = (float)div;
-                                } break;
+				int[] pos = getXYFromIdx(idx);
+				double div = 0.5 * ((vx[getIdxFromXY(pos[0] - 1, pos[1])] - vx[getIdxFromXY(pos[0] + 1, pos[1])]) +
+				                 + (vy[getIdxFromXY(pos[0], pos[1] - 1)] - vy[getIdxFromXY(pos[0], pos[1] + 1)]));
+				dataset_value = (float)div;
+			} break;
 		}
 
 		// Clamp
@@ -325,44 +327,44 @@ class Smoke {
 		return dataset_value;
 	}
 
-	private double[][][] directional_vectors = new double[DIM][DIM][2];
-	private void calculate_directional_vectors(ColormapSelectPanel panel) {
-		int[][] indices = {
-		                  {-1,-1},
-		                  { 0,-1},
-		                  { 1,-1},
-		                  {-1, 0},
-		                  { 1, 0},
-		                  {-1, 1},
-		                  { 0, 1},
-		                  { 1, 1},
-		                  };
-		double[][] vectors = {
-		                     {-Math.sqrt(2), Math.sqrt(2)},
-		                     {0.0f, 1.0f},
-                                     {Math.sqrt(2), Math.sqrt(2)},
-                                     {1.0f, 0.0f},
-				     {Math.sqrt(2), -Math.sqrt(2)},
-				     {0.0f, -1.0f},
-				     {-Math.sqrt(2), -Math.sqrt(2)},
-				     {-1.0f, 0.0f},
-				     };
-
-		for(int x = 0 ; x < DIM; ++x) {
-			for(int y = 0 ; y < DIM; ++y) {
-				double dx = 0.0;
-				double dy = 0.0;
-				double centre = getDatasetColor(x+y*DIM, panel);
-				for(int i = 0; i<8; ++i) {
-					int idx = (((x + indices[i][0])+DIM) % DIM) + (((y + indices[i][1])+DIM) % DIM) * DIM;
-					dx += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][0];
-					dy += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][1];
-				}
-				directional_vectors[x][y][0] = dx;
-				directional_vectors[x][y][1] = dy;
-			}
-		}
-	}
+// 	private double[][][] directional_vectors = new double[DIM][DIM][2];
+// 	private void calculate_directional_vectors(ColormapSelectPanel panel) {
+// 		int[][] indices = {
+// 		                  {-1,-1},
+// 		                  { 0,-1},
+// 		                  { 1,-1},
+// 		                  {-1, 0},
+// 		                  { 1, 0},
+// 		                  {-1, 1},
+// 		                  { 0, 1},
+// 		                  { 1, 1},
+// 		                  };
+// 		double[][] vectors = {
+// 		                     {-Math.sqrt(2), Math.sqrt(2)},
+// 		                     {0.0f, 1.0f},
+//                                      {Math.sqrt(2), Math.sqrt(2)},
+//                                      {1.0f, 0.0f},
+// 				     {Math.sqrt(2), -Math.sqrt(2)},
+// 				     {0.0f, -1.0f},
+// 				     {-Math.sqrt(2), -Math.sqrt(2)},
+// 				     {-1.0f, 0.0f},
+// 				     };
+//
+// 		for(int x = 0 ; x < DIM; ++x) {
+// 			for(int y = 0 ; y < DIM; ++y) {
+// 				double dx = 0.0;
+// 				double dy = 0.0;
+// 				double centre = getDatasetColor(x+y*DIM, panel);
+// 				for(int i = 0; i<8; ++i) {
+// 					int idx = (((x + indices[i][0])+DIM) % DIM) + (((y + indices[i][1])+DIM) % DIM) * DIM;
+// 					dx += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][0];
+// 					dy += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][1];
+// 				}
+// 				directional_vectors[x][y][0] = dx;
+// 				directional_vectors[x][y][1] = dy;
+// 			}
+// 		}
+// 	}
 
 	private double[] sampleDataset(int x, int y, VectorOptionSelectPanel panel) {
 		// x and y here represent the (x,y) id of the grid-rectangle we're sampling
@@ -450,7 +452,7 @@ class Smoke {
 
 		gl.glDisable(gl.GL_TEXTURE_2D);
 		gl.glEnable(gl.GL_TEXTURE_1D);
-		gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP]);
+		gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_SMOKE]);
 		gl.glDisable(gl.GL_BLEND);
 		gl.glColor4d(1.0, 1.0, 1.0, 1.0);
 
@@ -463,7 +465,7 @@ class Smoke {
 				px = wn + (float)i * wn;
 				py = hn + (float)j * hn;
 				idx = (j * DIM) + i;
-				gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+				gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
 				gl.glVertex2d(px, py);
 
 				for (i = 0; i < DIM - 1; i++) {
@@ -471,19 +473,19 @@ class Smoke {
 					py = hn + (j + 1) * hn;
 					idx = ((j + 1) * DIM) + i;
 
-					gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+					gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
 					gl.glVertex2d(px, py);
 					px = wn + (i + 1) * wn;
 					py = hn + j * hn;
 					idx = (j * DIM) + (i + 1);
-					gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+					gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
 					gl.glVertex2d(px, py);
 				}
 
 				px = wn + (float)(DIM - 1) * wn;
 				py = hn + (float)(j + 1) * hn;
 				idx = ((j + 1) * DIM) + (DIM - 1);
-				gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
+				gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
 				gl.glVertex2d(px, py);
 				gl.glEnd();
 			}
@@ -498,13 +500,13 @@ class Smoke {
 						idx = (j * DIM) + i;
 						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
 						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
-						gl.glTexCoord1f(getDatasetColor(idx, vectorOptionSelectPanel) * texture_fill);
+						gl.glTexCoord1d(getDatasetColor(idx, vectorOptionSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
 						gl.glVertex2d(wn + i * wn, hn + j * hn);
 						gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
 					}
 				gl.glEnd();
 			} else if (vector_type == VECTOR_TYPE_ARROW) {
-				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[3]);
+				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1]);
 				gl.glDisable(gl.GL_TEXTURE_1D);
 				gl.glEnable(gl.GL_TEXTURE_2D);
 				gl.glEnable(gl.GL_BLEND);
@@ -563,33 +565,35 @@ class Smoke {
 
 		if(draw_iso_lines) {
 			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_LINE);
-			gl.glColor4i(255, 0, 255, 255);
-			gl.glBegin(gl.GL_LINES);
 			gl.glDisable(gl.GL_TEXTURE_2D);
-			gl.glDisable(gl.GL_TEXTURE_1D);
+			gl.glEnable(gl.GL_TEXTURE_1D);
+			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_ISOLINES]);
 			gl.glDisable(gl.GL_BLEND);
-			int    iso_n_lines    = 10;
-			double iso_low_value  = 0.2;
-			double iso_high_value = 0.8;
+			gl.glColor4d(1.0, 1.0, 1.0, 1.0);
+			gl.glBegin(gl.GL_LINES);
+			int    iso_n_lines    = isoLineSelectPanel.getIsoLineCount();
+			double iso_low_value  = Math.min(isoLineSelectPanel.getMinIsoValue(), isoLineSelectPanel.getMaxIsoValue());
+			double iso_high_value = Math.max(isoLineSelectPanel.getMinIsoValue(), isoLineSelectPanel.getMaxIsoValue());
 
-			for(int n = 0; n < iso_n_lines; ++n) {
-				double iso_value = iso_low_value + (((iso_high_value - iso_low_value) / (double)iso_n_lines) * (double)n);
-				for(int y = 0; y < DIM; ++y) {
-					for(int x = 0; x < DIM; ++x) {
-						int idx_top_lft = ((x     + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
-						int idx_top_rgt = ((x + 1 + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
-						int idx_btm_lft = ((x     + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
-						int idx_btm_rgt = ((x + 1 + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
+
+			for(int y = 0; y < DIM; ++y) {
+				for(int x = 0; x < DIM; ++x) {
+					int idx_top_lft = ((x     + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
+					int idx_top_rgt = ((x + 1 + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
+					int idx_btm_lft = ((x     + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
+					int idx_btm_rgt = ((x + 1 + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
+
+					double top_lft_value = getDatasetColor(idx_top_lft, isoLineSelectPanel);
+					double top_rgt_value = getDatasetColor(idx_top_rgt, isoLineSelectPanel);
+					double btm_lft_value = getDatasetColor(idx_btm_lft, isoLineSelectPanel);
+					double btm_rgt_value = getDatasetColor(idx_btm_rgt, isoLineSelectPanel);
+
+					if(iso_high_value - iso_low_value < 0.001) iso_n_lines = 1; // optimalize ftw
+					for(int n = 0; n < iso_n_lines; ++n) {
+						double iso_value = iso_low_value + (((iso_high_value - iso_low_value) / (double)(iso_n_lines+1)) * (double)(n+1));
+						gl.glTexCoord1d(iso_value);
 						// Calculate lookup table index
 						int lookup_index = 0;
-						double top_lft_value = getDatasetColor(idx_top_lft, smokeColormapSelectPanel);
-						double top_rgt_value = getDatasetColor(idx_top_rgt, smokeColormapSelectPanel);
-						double btm_lft_value = getDatasetColor(idx_btm_lft, smokeColormapSelectPanel);
-						double btm_rgt_value = getDatasetColor(idx_btm_rgt, smokeColormapSelectPanel);
-						top_lft_value = top_lft_value < 0.0 ? 0.0 : top_lft_value > 1.0 ? 1.0 : top_lft_value;
-						top_rgt_value = top_rgt_value < 0.0 ? 0.0 : top_rgt_value > 1.0 ? 1.0 : top_rgt_value;
-						btm_lft_value = btm_lft_value < 0.0 ? 0.0 : btm_lft_value > 1.0 ? 1.0 : btm_lft_value;
-						btm_rgt_value = btm_rgt_value < 0.0 ? 0.0 : btm_rgt_value > 1.0 ? 1.0 : btm_rgt_value;
 						if ( top_lft_value > iso_value) lookup_index |= 1;
 						if ( top_rgt_value > iso_value) lookup_index |= 2;
 						if ( btm_rgt_value > iso_value) lookup_index |= 4;
@@ -600,22 +604,18 @@ class Smoke {
 							switch (msquare_lookup[lookup_index][i]) {
 								case 0: { // Top edge
 									double iso_position = ((iso_value - top_lft_value) / (top_rgt_value-top_lft_value)) * wn;
-// 									iso_position = 0.5 * wn;
 									gl.glVertex2d(wn + x * wn + iso_position, hn + y * hn);
 								}; break;
 								case 1: { // Right edge
 									double iso_position = ((iso_value - top_rgt_value) / (btm_rgt_value-top_rgt_value)) * hn;
-// 									iso_position = 0.5 * wn;
 									gl.glVertex2d(wn + x * wn + wn, hn + y * hn + iso_position);
 								}; break;
 								case 2: { // Bottom edge
 									double iso_position = ((iso_value - btm_rgt_value) / (btm_lft_value-btm_rgt_value)) * wn;
-// 									iso_position = 0.5 * wn;
 									gl.glVertex2d(wn + x * wn + (wn - iso_position), hn + y * hn + hn);
 								}; break;
 								case 3: { // Left edge
 									double iso_position = ((iso_value - btm_lft_value) / (top_lft_value-btm_lft_value)) * hn;
-// 									iso_position = 0.5 * wn;
 									gl.glVertex2d(wn + x * wn, hn + y * hn + (hn - iso_position));
 								}; break;
 							}
@@ -645,6 +645,8 @@ class Smoke {
 		vectorOptionSelectPanel.reset_maxdataset_value();
 		vectorOptionSelectPanel.reset_mindataset_value();
 		vectorOptionSelectPanel.reset_longest_vector();
+		isoLineSelectPanel.reset_mindataset_value();
+		isoLineSelectPanel.reset_maxdataset_value();
 	}
 	static long avg_begin      = 0;
 	static long avg_begin_prev = 0;
@@ -805,7 +807,7 @@ class Smoke {
 		vectorButton.setSelected(false);
 		draw_smoke = true;
 		draw_vecs = false;
-                draw_iso_lines = true;
+		draw_iso_lines = true;
 
 		smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));
 		smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -961,16 +963,15 @@ class Smoke {
 		return texid;
 	}
 
-	float texture_fill = 1.0f;
 	class MyGLEventListener implements GLEventListener {
 		public void init(GLAutoDrawable drawable) {
 			GL gl = drawable.getGL();
 			gl.setSwapInterval(1); //Meh seems NOP in linux :(
 // 			gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA);
-			textures[1] = loadTexture(gl, "arrow-1.png");
-			textures[2] = loadTexture(gl, "arrow-2.png");
-			textures[3] = loadTexture(gl, "arrow-3.png");
+			textures[TEXTURE_ARROW_1] = loadTexture(gl, "arrow-1.png");
+			textures[TEXTURE_ARROW_2] = loadTexture(gl, "arrow-2.png");
+			textures[TEXTURE_ARROW_3] = loadTexture(gl, "arrow-3.png");
 		}
 
 		public int loadTexture(GL gl, String fileName) {
@@ -1002,28 +1003,35 @@ class Smoke {
 			return texture;
 		}
 
+		private void regenerate_colormap_texture(GL gl, ColormapSelectPanel panel, int PANEL_ID) {
+			int ncolors = panel.getColorCount();
+			gl.glEnable(gl.GL_TEXTURE_1D);
+			gl.glColor3f(1.0f, 1.0f, 1.0f);
+			int n = nextPowerOfTwo(ncolors + 1);
+			FloatBuffer texture_data = BufferUtil.newFloatBuffer(n * 3);
+			boolean fixup = ncolors + 1 != n;
+			for (int i = 0 ; i <= ncolors; ++i) {
+				double pos = (double)i / (double)ncolors;
+				texture_data.put(panel.getGradientColor(pos));
+				if (i == ncolors && fixup) { //Fixup clamping of colors to texture
+					fixup = false;
+					--i;
+				}
+			}
+			textures[PANEL_ID] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
+			texture_fill[PANEL_ID] = (float)((ncolors + 1) / (double)nextPowerOfTwo(ncolors + 1));
+			panel.setUpdateGradientTexture(false);
+		}
+
 		public void display(GLAutoDrawable drawable) {
 			Smoke.this.do_one_simulation_step();
 			GL gl = drawable.getGL();
 
-			if (smokeColormapSelectPanel.getUpdateGradientTexture()) {
-				int ncolors = smokeColormapSelectPanel.getColorCount();
-				gl.glEnable(gl.GL_TEXTURE_1D);
-				gl.glColor3f(1.0f, 1.0f, 1.0f);
-				int n = nextPowerOfTwo(ncolors + 1);
-				FloatBuffer texture_data = BufferUtil.newFloatBuffer(n * 3);
-				boolean fixup = ncolors + 1 != n;
-				for (int i = 0 ; i <= ncolors; ++i) {
-					double pos = (double)i / (double)ncolors;
-					texture_data.put(smokeColormapSelectPanel.getGradientColor(pos));
-					if (i == ncolors && fixup) { //Fixup clamping of colors to texture
-						fixup = false;
-						--i;
-					}
+			ColormapSelectPanel[] colormappanels = {smokeColormapSelectPanel, isoLineSelectPanel};
+			for(int i = TEXTURE_COLORMAP_SMOKE; i < TEXTURE_COLORMAP_ISOLINES + 1; ++i) {
+				if(colormappanels[i].getUpdateGradientTexture()) {
+					regenerate_colormap_texture(gl, colormappanels[i - TEXTURE_COLORMAP_SMOKE], i);
 				}
-				textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
-				texture_fill = (float)((ncolors + 1) / (double)nextPowerOfTwo(ncolors + 1));
-				smokeColormapSelectPanel.setUpdateGradientTexture(false);
 			}
 
 			Smoke.this.display(gl);
