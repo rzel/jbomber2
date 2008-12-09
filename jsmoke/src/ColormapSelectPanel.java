@@ -244,7 +244,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		}
 	}
 
-	private JPanel initDatasetSelectPanel() {
+        private JPanel initDatasetSelectPanel() {
 		JRadioButton rhoButton = new JRadioButton("rho");
 		rhoButton.setSelected(true);
 		rhoButton.addActionListener(this);

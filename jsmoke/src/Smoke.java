@@ -537,8 +537,8 @@ class Smoke {
 			}
 		}
 
-		boolean draw_isolines = true;
-		if(draw_isolines) {
+		//boolean draw_isolines = true;
+		if(draw_iso_lines) {
 			gl.glEnable(gl.GL_BLEND);
 			gl.glDisable(gl.GL_TEXTURE_2D);
 			gl.glEnable(gl.GL_TEXTURE_1D);
@@ -825,7 +825,7 @@ class Smoke {
 		vectorOptionSelectPanel = new VectorOptionSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
 		tabPane.addTab("Vector options", vectorOptionSelectPanel);
 
-                isoLineSelectPanel = new IsoLineSelectPanel(frame);
+                isoLineSelectPanel = new IsoLineSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
                 tabPane.addTab("ISO line options", isoLineSelectPanel);
 
 		tabPane.setSelectedIndex(1);
@@ -974,9 +974,9 @@ class Smoke {
 			}
 
 // 			if (isolineSelectPanel.getUpdateGradientTexture()) {
-			if(isoLineSelectPanel.getUpdateIsoTexture()) {
-				double iso_low_value  = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.getMinIsoValue()));
-				double iso_high_value = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.getMaxIsoValue()));
+			if(isoLineSelectPanel.getUpdateGradientTexture()) {
+				double iso_low_value  = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.get_mindataset_value()));
+				double iso_high_value = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.get_maxdataset_value()));
 				System.out.println("iso_low_value="+iso_low_value);
 				System.out.println("iso_high_value="+iso_high_value);
 				double wn = winWidth / (double)(DIM + 1);   // Grid cell width
@@ -1016,16 +1016,17 @@ class Smoke {
 				}
 
 				float[] intermediate_texbuf = new float[2048*4];
-                                float[] ic = isoLineSelectPanel.getIsoLineColor();
-				float[] fc = {ic[0] , ic[1] , ic[2] , 0.0f};
+                                //float[] ic = isoLineSelectPanel.getIsoLineColor();
+				//float[] fc = {ic[0] , ic[1] , ic[2] , 0.0f};
+                                float[] fc = {1.0f, 0.0f, 1.0f, 0.0f};
 				for(int i = 0 ; i < 2048*4; i+=4) {
 					intermediate_texbuf[i+0] = fc[0];
 					intermediate_texbuf[i+1] = fc[1];
 					intermediate_texbuf[i+2] = fc[2];
 					intermediate_texbuf[i+3] = fc[3];
 				}
-
-				fc = new float[]{ic[0] , ic[1] , ic[2] , 1.0f};
+                                
+                                fc = new float[] {1.0f, 0.0f, 1.0f, 0.0f};
 				for(int i = 4*(int)(iso_n_low_texels+0.5); i < 4*(int)(iso_n_low_texels+iso_n_texels+0.5); i+=4) {
 					intermediate_texbuf[i+0] = fc[0];
 					intermediate_texbuf[i+1] = fc[1];

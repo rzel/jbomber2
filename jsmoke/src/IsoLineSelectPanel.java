@@ -4,8 +4,48 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.border.*;
 
-public class IsoLineSelectPanel extends JPanel implements ActionListener, ChangeListener {
-    public static final int DATASET_RHO   = 1;
+public class IsoLineSelectPanel extends ColormapSelectPanel {
+    private UnboundedDoubleSpinnerModel minIsoValueSpinnerModel = new UnboundedDoubleSpinnerModel(0.0);
+    private UnboundedDoubleSpinnerModel maxIsoValueSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);             
+    private SpinnerNumberModel isoLineCountSpinnerModel         = new SpinnerNumberModel(1,1,100,1);
+    
+    public IsoLineSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
+        super(minColor,maxColor,colorCount,colormap,frame);
+        // dataset = DATASET_RHO;
+        add(initIsoValuesSelectPanel());
+    }
+    
+    public JPanel initIsoValuesSelectPanel() {
+        JPanel isoValueSelectPanel = new JPanel();
+        isoValueSelectPanel.setLayout(new GridLayout(3, 2));
+        
+        isoValueSelectPanel.add(new JLabel("Low: ", SwingConstants.RIGHT));
+        isoValueSelectPanel.add(new JSpinner(minIsoValueSpinnerModel));
+        minIsoValueSpinnerModel.setValue(new Double(0.5));
+        isoValueSelectPanel.add(new JLabel("High: ", SwingConstants.RIGHT));
+        isoValueSelectPanel.add(new JSpinner(maxIsoValueSpinnerModel));
+        maxIsoValueSpinnerModel.setValue(new Double(0.5));
+        
+        isoValueSelectPanel.add(new JLabel("Choose n:", SwingConstants.RIGHT));        
+        isoValueSelectPanel.add(new JSpinner(isoLineCountSpinnerModel));
+        
+        isoValueSelectPanel.setBorder(new TitledBorder("Iso values:"));
+        isoValueSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return isoValueSelectPanel;
+    }
+
+    public double getMinIsoValue() {
+        return ((Double)minIsoValueSpinnerModel.getValue()).doubleValue();
+    }
+
+    public double getMaxIsoValue() {
+        return ((Double)maxIsoValueSpinnerModel.getValue()).doubleValue();
+    }
+    
+    public int getIsoLineCount() {
+        return ((Integer)isoLineCountSpinnerModel.getValue()).intValue();
+    }
+/*    public static final int DATASET_RHO   = 1;
     public static final int DATASET_F     = 2;
     public static final int DATASET_V     = 4;
     public static final int DATASET_F_DIV = 8;
@@ -203,5 +243,5 @@ public class IsoLineSelectPanel extends JPanel implements ActionListener, Change
             colorLabel.repaint();
             updateIsoTexture = true;
         }
-    }
+    }*/
 }
