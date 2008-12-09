@@ -65,8 +65,29 @@ class Smoke {
 	private static int TEXTURE_ARROW_1  = 1;
 	private static int TEXTURE_ARROW_2  = 2;
 	private static int TEXTURE_ARROW_3  = 3;
-	private static int TEXTURE_ISOLINES = 4;
-	int[] textures = new int[5];
+	private static int TEXTURE_COUNT    = 4;
+	int[] textures = new int[TEXTURE_COUNT];
+
+	int[][] msquare_lookup = {
+		{-1, -1, -1, -1, -1},   // 0: Case 0
+		{ 0,  3, -1, -1, -1},   // 1: Case 8
+		{ 0,  1, -1, -1, -1},   // 2: Case 4
+		{ 1,  3, -1, -1, -1},   // 3: Case 12
+		{ 1,  2, -1, -1, -1},   // 4: Case 2
+		{ 0,  3,  1,  2, -1},   // 5: Case 10 <= ambigu
+		{ 0,  2, -1, -1, -1},   // 6: Case 6
+		{ 2,  3, -1, -1, -1},   // 7: Case 14
+		{ 2,  3, -1, -1, -1},   // 8: Case 1
+		{ 0,  2, -1, -1, -1},   // 9: Case 9
+		{ 0,  1,  2,  3, -1},   // 10: Case 5 <= ambigu
+		{ 1,  2, -1, -1, -1},   // 11: Case 13
+		{ 1,  3, -1, -1, -1},   // 12: Case 3
+		{ 0,  1, -1, -1, -1},   // 13: Case 11
+		{ 0,  3, -1, -1, -1},   // 14: Case 7
+		{-1, -1, -1, -1, -1},   // 15: Case 15
+	};
+
+
 
 	private ColormapSelectPanel smokeColormapSelectPanel;
 	private VectorOptionSelectPanel vectorOptionSelectPanel;
@@ -422,6 +443,7 @@ class Smoke {
 
 	//visualize: This is the main visualization function
 	void visualize(GL gl) {
+		if(textures[TEXTURE_COUNT-1]==-1) return;
 		int        i, j, idx; double px, py;
 		double/*fftw_real*/  wn = winWidth / (double)(DIM + 1);   // Grid cell width
 		double/*fftw_real*/  hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
@@ -430,6 +452,7 @@ class Smoke {
 		gl.glEnable(gl.GL_TEXTURE_1D);
 		gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP]);
 		gl.glDisable(gl.GL_BLEND);
+		gl.glColor4d(1.0, 1.0, 1.0, 1.0);
 
 		if (draw_smoke) {
 			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
@@ -537,44 +560,71 @@ class Smoke {
 			}
 		}
 
-		//boolean draw_isolines = true;
+
 		if(draw_iso_lines) {
-			gl.glEnable(gl.GL_BLEND);
+			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_LINE);
+			gl.glColor4i(255, 0, 255, 255);
+			gl.glBegin(gl.GL_LINES);
 			gl.glDisable(gl.GL_TEXTURE_2D);
-			gl.glEnable(gl.GL_TEXTURE_1D);
-			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_ISOLINES]);
-			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
-			for (j = 0; j < DIM - 1; j++) {		//draw smoke
-				gl.glBegin(GL.GL_TRIANGLE_STRIP);
+			gl.glDisable(gl.GL_TEXTURE_1D);
+			gl.glDisable(gl.GL_BLEND);
+			int    iso_n_lines    = 10;
+			double iso_low_value  = 0.2;
+			double iso_high_value = 0.8;
 
-				i = 0;
-				px = wn + (float)i * wn;
-				py = hn + (float)j * hn;
-				idx = (j * DIM) + i;
-				gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
-				gl.glVertex2d(px, py);
+			for(int n = 0; n < iso_n_lines; ++n) {
+				double iso_value = iso_low_value + (((iso_high_value - iso_low_value) / (double)iso_n_lines) * (double)n);
+				for(int y = 0; y < DIM; ++y) {
+					for(int x = 0; x < DIM; ++x) {
+						int idx_top_lft = ((x     + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
+						int idx_top_rgt = ((x + 1 + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
+						int idx_btm_lft = ((x     + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
+						int idx_btm_rgt = ((x + 1 + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
+						// Calculate lookup table index
+						int lookup_index = 0;
+						double top_lft_value = getDatasetColor(idx_top_lft, smokeColormapSelectPanel);
+						double top_rgt_value = getDatasetColor(idx_top_rgt, smokeColormapSelectPanel);
+						double btm_lft_value = getDatasetColor(idx_btm_lft, smokeColormapSelectPanel);
+						double btm_rgt_value = getDatasetColor(idx_btm_rgt, smokeColormapSelectPanel);
+						top_lft_value = top_lft_value < 0.0 ? 0.0 : top_lft_value > 1.0 ? 1.0 : top_lft_value;
+						top_rgt_value = top_rgt_value < 0.0 ? 0.0 : top_rgt_value > 1.0 ? 1.0 : top_rgt_value;
+						btm_lft_value = btm_lft_value < 0.0 ? 0.0 : btm_lft_value > 1.0 ? 1.0 : btm_lft_value;
+						btm_rgt_value = btm_rgt_value < 0.0 ? 0.0 : btm_rgt_value > 1.0 ? 1.0 : btm_rgt_value;
+						if ( top_lft_value > iso_value) lookup_index |= 1;
+						if ( top_rgt_value > iso_value) lookup_index |= 2;
+						if ( btm_rgt_value > iso_value) lookup_index |= 4;
+						if ( btm_lft_value > iso_value) lookup_index |= 8;
 
-				for (i = 0; i < DIM - 1; i++) {
-					px = wn + i * wn;
-					py = hn + (j + 1) * hn;
-					idx = ((j + 1) * DIM) + i;
-
-					gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
-					gl.glVertex2d(px, py);
-					px = wn + (i + 1) * wn;
-					py = hn + j * hn;
-					idx = (j * DIM) + (i + 1);
-					gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
-					gl.glVertex2d(px, py);
+						i = 0;
+						while( msquare_lookup[lookup_index][i] != -1 ) {
+							switch (msquare_lookup[lookup_index][i]) {
+								case 0: { // Top edge
+									double iso_position = ((iso_value - top_lft_value) / (top_rgt_value-top_lft_value)) * wn;
+// 									iso_position = 0.5 * wn;
+									gl.glVertex2d(wn + x * wn + iso_position, hn + y * hn);
+								}; break;
+								case 1: { // Right edge
+									double iso_position = ((iso_value - top_rgt_value) / (btm_rgt_value-top_rgt_value)) * hn;
+// 									iso_position = 0.5 * wn;
+									gl.glVertex2d(wn + x * wn + wn, hn + y * hn + iso_position);
+								}; break;
+								case 2: { // Bottom edge
+									double iso_position = ((iso_value - btm_rgt_value) / (btm_lft_value-btm_rgt_value)) * wn;
+// 									iso_position = 0.5 * wn;
+									gl.glVertex2d(wn + x * wn + (wn - iso_position), hn + y * hn + hn);
+								}; break;
+								case 3: { // Left edge
+									double iso_position = ((iso_value - btm_lft_value) / (top_lft_value-btm_lft_value)) * hn;
+// 									iso_position = 0.5 * wn;
+									gl.glVertex2d(wn + x * wn, hn + y * hn + (hn - iso_position));
+								}; break;
+							}
+							++i;
+						}
+					}
 				}
-
-				px = wn + (float)(DIM - 1) * wn;
-				py = hn + (float)(j + 1) * hn;
-				idx = ((j + 1) * DIM) + (DIM - 1);
-				gl.glTexCoord1f(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill);
-				gl.glVertex2d(px, py);
-				gl.glEnd();
 			}
+			gl.glEnd();
 		}
 
 		gl.glFlush(); // forces all opengl commands to complete. Blocking!!
@@ -845,6 +895,9 @@ class Smoke {
 		caps.setDoubleBuffered(true);
 
 		// initialize opengl Panel
+		for(int i = 0; i < TEXTURE_COUNT; ++i) {
+			textures[i] = -1;
+		}
 		panel = new GLCanvas(caps);
 		panel.addGLEventListener(new MyGLEventListener());
 		panel.addMouseMotionListener(new MouseListener());
@@ -970,75 +1023,8 @@ class Smoke {
 				}
 				textures[0] = createTextureFromBuffer(gl, texture_data, gl.GL_RGB, gl.GL_RGB, gl.GL_FLOAT, gl.GL_TEXTURE_1D, n, 1);
 				texture_fill = (float)((ncolors + 1) / (double)nextPowerOfTwo(ncolors + 1));
-				smokeColormapSelectPanel.setUpdateGradientTexture(true);
+				smokeColormapSelectPanel.setUpdateGradientTexture(false);
 			}
-
-// 			if (isolineSelectPanel.getUpdateGradientTexture()) {
-			if(isoLineSelectPanel.getUpdateGradientTexture()) {
-				double iso_low_value  = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.get_mindataset_value()));
-				double iso_high_value = Math.min(1.0, Math.max(0.0, isoLineSelectPanel.get_maxdataset_value()));
-				System.out.println("iso_low_value="+iso_low_value);
-				System.out.println("iso_high_value="+iso_high_value);
-				double wn = winWidth / (double)(DIM + 1);   // Grid cell width
-				double hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
-				double nn = Math.max(wn,hn);
-				int    iso_tex_size   = Math.min(nextPowerOfTwo((int)nn), 2048);
-				int    iso_min_texels = (int)(iso_tex_size/nn/(20.0/9.0)+0.5);
-
-				System.out.println("iso_min_texels="+iso_min_texels);
-				System.out.println("nn="+nn);
-
-				double iso_n_texels      = ((iso_high_value - iso_low_value) * iso_tex_size);
-				double iso_n_low_texels  = (iso_low_value                    * iso_tex_size);
-				double iso_n_high_texels = ((1.0-iso_high_value)             * iso_tex_size);
-
-// 				System.out.println("iso_n_low_texels="+iso_n_low_texels);
-// 				System.out.println("iso_n_high_texels="+iso_n_high_texels);
-// 				System.out.println("iso_n_texels="+iso_n_texels);
-// 				System.out.println("iso_tex_size="+iso_tex_size);
-
-				if(iso_n_texels < iso_min_texels ) {
-					System.out.println("Adjust");
-					double  diff = iso_min_texels - iso_n_texels;
-					iso_n_low_texels  -= (diff/2.0);
-					iso_n_high_texels -= (diff/2.0);
-					iso_n_texels = iso_min_texels;
-				}
-
-// 				System.out.println("iso_n_low_texels="+iso_n_low_texels);
-// 				System.out.println("iso_n_high_texels="+iso_n_high_texels);
-// 				System.out.println("iso_n_texels="+iso_n_texels);
-// 				System.out.println("iso_tex_size="+iso_tex_size);
-
-				if(iso_n_low_texels + iso_n_texels + iso_n_high_texels > iso_tex_size) {
-					System.out.println("Error: texture size exceeded");
-					return;
-				}
-
-				float[] intermediate_texbuf = new float[2048*4];
-                                //float[] ic = isoLineSelectPanel.getIsoLineColor();
-				//float[] fc = {ic[0] , ic[1] , ic[2] , 0.0f};
-                                float[] fc = {1.0f, 0.0f, 1.0f, 0.0f};
-				for(int i = 0 ; i < 2048*4; i+=4) {
-					intermediate_texbuf[i+0] = fc[0];
-					intermediate_texbuf[i+1] = fc[1];
-					intermediate_texbuf[i+2] = fc[2];
-					intermediate_texbuf[i+3] = fc[3];
-				}
-                                
-                                fc = new float[] {1.0f, 0.0f, 1.0f, 0.0f};
-				for(int i = 4*(int)(iso_n_low_texels+0.5); i < 4*(int)(iso_n_low_texels+iso_n_texels+0.5); i+=4) {
-					intermediate_texbuf[i+0] = fc[0];
-					intermediate_texbuf[i+1] = fc[1];
-					intermediate_texbuf[i+2] = fc[2];
-					intermediate_texbuf[i+3] = fc[3];
-				}
-
-				FloatBuffer texture_data = FloatBuffer.wrap(intermediate_texbuf);//BufferUtil.newFloatBuffer(iso_tex_size*4);
-				textures[TEXTURE_ISOLINES] = createTextureFromBuffer(gl, texture_data, gl.GL_RGBA, gl.GL_RGBA, gl.GL_FLOAT, gl.GL_TEXTURE_1D, iso_tex_size, 1);
-				updateisotexture = false;
-			}
-
 
 			Smoke.this.display(gl);
 			gl.glFlush();
