@@ -982,7 +982,7 @@ class Smoke {
 				double wn = winWidth / (double)(DIM + 1);   // Grid cell width
 				double hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
 				double nn = Math.max(wn,hn);
-				int    iso_tex_size   = 2048;//Math.min(nextPowerOfTwo((int)nn), 2048);
+				int    iso_tex_size   = Math.min(nextPowerOfTwo((int)nn), 2048);
 				int    iso_min_texels = (int)(iso_tex_size/nn/(20.0/9.0)+0.5);
 
 				System.out.println("iso_min_texels="+iso_min_texels);
