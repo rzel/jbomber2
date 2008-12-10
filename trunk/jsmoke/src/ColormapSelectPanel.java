@@ -31,20 +31,24 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
 	private JSliderlessSlider colorPreviewSlider;
 	private int colorCount = 2047;
-	private ColorTable colortable;
+	protected ColorTable colortable;
 	private ColorSelector colorselector;
 	private JLabel colorCountLabel;
-	private JSlider colorCountSlider;
+	protected JSlider colorCountSlider;
+	private JRadioButton colorInterpolateModeRGB;
+	private JRadioButton colorInterpolateModeHSV;
 
 	private int dataset   = DATASET_RHO;
 	private int scalemode = SCALE_SCALE;
 	private int colormap  = COLOR_CUSTOM;
-
+	public static final int INTERPOLATE_RGB = 0;
+	public static final int INTERPOLATE_HSV = 1;
 	private boolean update_gradient_texture;
 
 	private UnboundedDoubleSpinnerModel minClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(0.0);
 	private UnboundedDoubleSpinnerModel maxClampSelectSpinnerModel = new UnboundedDoubleSpinnerModel(1.0);
         private float[][] custom_gradient_cache = new float[2048][3];
+
 	int custom_gradient_interpolate_mode = 0;
 
 	public ColormapSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
@@ -214,11 +218,11 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			generate_custom_gradient_cache();
 			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
-			custom_gradient_interpolate_mode = 0;
+			custom_gradient_interpolate_mode = INTERPOLATE_RGB;
 			generate_custom_gradient_cache();
 			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("INTERPOLATE_HSV")) {
-			custom_gradient_interpolate_mode = 1;
+			custom_gradient_interpolate_mode = INTERPOLATE_HSV;
 			generate_custom_gradient_cache();
 			update_gradient_texture = true;
 		}
@@ -436,7 +440,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		color[2] = Math.max(0.0f, (3 - Math.abs(value - 1) - Math.abs(value - 2)) / 2);
 	}
 
-	private void generate_custom_gradient_cache() {
+	protected void generate_custom_gradient_cache() {
 		int n = colortable.getRowCount();
 		ColorSpace cs = ((Color)colortable.getValueAt(0, 0)).getColorSpace(); // Assume all colors use the same color space
 		Color a = null, b = null;
@@ -480,6 +484,14 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 					break;
 			}
 		}
+	}
+
+	protected void setInterpolateMode(int i) {
+		custom_gradient_interpolate_mode = i;
+		generate_custom_gradient_cache();
+		update_gradient_texture = true;
+		colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == INTERPOLATE_RGB);
+		colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == INTERPOLATE_HSV);
 	}
 
 	private JPanel initCustomColorPanel(JFrame frame) {
@@ -533,14 +545,14 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		BoxLayout panellayout = new BoxLayout(panel, BoxLayout.X_AXIS);
 		panel.setLayout(panellayout);
 
-		JRadioButton colorInterpolateModeRGB = new JRadioButton("Interpolate in RGB space");
-		JRadioButton colorInterpolateModeHSV = new JRadioButton("Interpolate in HSV space");
+		colorInterpolateModeRGB = new JRadioButton("Interpolate in RGB space");
+		colorInterpolateModeHSV = new JRadioButton("Interpolate in HSV space");
 		colorInterpolateModeRGB.setActionCommand("INTERPOLATE_RGB");
 		colorInterpolateModeHSV.setActionCommand("INTERPOLATE_HSV");
 		colorInterpolateModeRGB.addActionListener(this);
 		colorInterpolateModeHSV.addActionListener(this);
-		colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == 0);
-		colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == 0);
+		colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == INTERPOLATE_RGB);
+		colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == INTERPOLATE_HSV);
 		ButtonGroup colorInterpolateModeGroup = new ButtonGroup();
 		colorInterpolateModeGroup.add(colorInterpolateModeRGB);
 		colorInterpolateModeGroup.add(colorInterpolateModeHSV);
