@@ -493,6 +493,12 @@ class Smoke {
 
 		if (draw_vecs) {
 			//calculate_directional_vectors(vectorOptionSelectPanel);
+			gl.glDisable(gl.GL_TEXTURE_2D);
+			gl.glEnable(gl.GL_TEXTURE_1D);
+			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_SMOKE]);
+			gl.glDisable(gl.GL_BLEND);
+			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
+			gl.glColor4d(1.0, 1.0, 1.0, 1.0);
 			if (vector_type == VECTOR_TYPE_HEDGEHOG) {
 				gl.glBegin(GL.GL_LINES);				//draw velocities
 				for (i = 0; i < DIM; i++)
