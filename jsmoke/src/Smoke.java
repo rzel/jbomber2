@@ -744,7 +744,9 @@ class Smoke {
 				draw_smoke = !draw_smoke;
 			} else if (e.getActionCommand().equals("VECTOR_TOGGLE")) {
 				draw_vecs = !draw_vecs;
-			} else {
+			} else if (e.getActionCommand().equals("ISO_LINE_TOGGLE")) {
+				draw_iso_lines = !draw_iso_lines;
+			}else {
 				System.out.println("Smoke: " + e.getActionCommand());
 			}
 		}
