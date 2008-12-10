@@ -582,8 +582,8 @@ class Smoke {
 			double iso_high_value = Math.max(isoLineSelectPanel.getMinIsoValue(), isoLineSelectPanel.getMaxIsoValue());
 
 
-			for(int y = 0; y < DIM; ++y) {
-				for(int x = 0; x < DIM; ++x) {
+			for(int y = 0; y < DIM-1; ++y) {
+				for(int x = 0; x < DIM-1; ++x) {
 					int idx_top_lft = ((x     + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
 					int idx_top_rgt = ((x + 1 + DIM) % DIM) + (((y     + DIM) % DIM) * DIM);
 					int idx_btm_lft = ((x     + DIM) % DIM) + (((y + 1 + DIM) % DIM) * DIM);
