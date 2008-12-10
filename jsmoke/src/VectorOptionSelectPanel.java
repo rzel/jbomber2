@@ -39,6 +39,29 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		vector_grid_y.addChangeListener(new VectorOptionSelectPanelListener());
 		optionPanel.setLayout(new SpringLayout());
 
+
+		/****************************
+		 ** BEGIN Default gradient **
+		 ****************************/
+		DefaultTableModel tablemodelcolors = (DefaultTableModel)colortable.getModel();
+		TableColumnModel cm = colortable.getColumnModel();
+		ColorTableRenderer r = new ColorTableRenderer();
+		TableColumn c = cm.getColumn(0);
+		c.setCellRenderer(r);
+
+		tablemodelcolors.setRowCount(0);
+		Object[] o = new Object[1];
+		o[0] = new Color(255, 255, 0);
+		tablemodelcolors.addRow(o);
+		o[0] = new Color(255, 0, 20);
+		tablemodelcolors.addRow(o);
+		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
+		generate_custom_gradient_cache();
+		/**************************
+		 ** END Default gradient **
+		 **************************/
+
+
 		vector_size_label = new JLabel("Size [" + getVectorSize() + "]:");
 		optionPanel.add(vector_size_label);
 		optionPanel.add(vector_size);
