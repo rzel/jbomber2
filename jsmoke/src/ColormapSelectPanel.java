@@ -200,8 +200,6 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			if (row >= 0 && column >= 0)
 				colorselector.setSelectedColor((Color)colortable.getValueAt(row, column));
 			colorselector.setVisible(true);
-// 			generate_custom_gradient_cache();
-// 			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("COLORTABLE_ADD_NEW_COLOR")) {
 			int row = colortable.getSelectedRow();
 			Object[] o = new Object[1];
@@ -210,21 +208,17 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			colortable.changeSelection(row, 0, false, false);
 			colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 			generate_custom_gradient_cache();
-			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
 			int row = colortable.getSelectedRow();
 			((DefaultTableModel)(colortable.getModel())).removeRow(row);
 			colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 			generate_custom_gradient_cache();
-			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
 			custom_gradient_interpolate_mode = INTERPOLATE_RGB;
 			generate_custom_gradient_cache();
-			update_gradient_texture = true;
 		} else if (e.getActionCommand().equals("INTERPOLATE_HSV")) {
 			custom_gradient_interpolate_mode = INTERPOLATE_HSV;
 			generate_custom_gradient_cache();
-			update_gradient_texture = true;
 		}
 	}
 
@@ -235,7 +229,6 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			colorCount = value;
 			colorPreviewSlider.setCount(colorCount);
 			generate_custom_gradient_cache();
-			update_gradient_texture = true;
 		} else if(e.getSource().getClass().getName().equals("java.awt.Color")) {
 			int row = colortable.getSelectedRow();
 			int column = colortable.getSelectedColumn();
@@ -243,7 +236,6 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 				colortable.setValueAt(e.getSource(), row, column);
 			}
 			generate_custom_gradient_cache();
-			update_gradient_texture = true;
 		}
 	}
 
@@ -484,12 +476,12 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 					break;
 			}
 		}
+		update_gradient_texture = true;
 	}
 
 	protected void setInterpolateMode(int i) {
 		custom_gradient_interpolate_mode = i;
 		generate_custom_gradient_cache();
-		update_gradient_texture = true;
 		colorInterpolateModeRGB.setSelected(custom_gradient_interpolate_mode == INTERPOLATE_RGB);
 		colorInterpolateModeHSV.setSelected(custom_gradient_interpolate_mode == INTERPOLATE_HSV);
 	}
