@@ -506,8 +506,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
 		tablemodelcolors.setRowCount(0);
 		Object[] o = new Object[1];
-		o[0] = new Color(0, 0, 0);
-		tablemodelcolors.addRow(o);
+// 		o[0] = new Color(0, 0, 0);
+// 		tablemodelcolors.addRow(o);
 		o[0] = new Color(0, 255, 255);
 		tablemodelcolors.addRow(o);
 		o[0] = new Color(255, 0, 255);
