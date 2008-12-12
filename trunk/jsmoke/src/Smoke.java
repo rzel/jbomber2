@@ -30,7 +30,7 @@ import com.sun.opengl.util.*;
 import javax.imageio.*;
 import java.awt.image.*;
 import java.io.*;
-
+import javax.swing.event.MouseInputListener;
 /** Usage: Drag with the mouse to add smoke to the fluid. This will also move a "rotor" that disturbs
  *        the velocity field at the mouse location. Press the indicated keys to change options
  */
@@ -69,6 +69,8 @@ class Smoke {
 	private static int TEXTURE_COUNT             = 5;
 	int[] textures        = new int[TEXTURE_COUNT];
 	double[] texture_fill = new double[TEXTURE_COUNT];
+
+	private static double mousex_prev, mousey_prev, mousex, mousey, rotationx, rotationy, scale;
 
 	int[][] msquare_lookup = {
 		{-1, -1, -1, -1, -1},   // 0: Case 0
@@ -327,45 +329,6 @@ class Smoke {
 		return dataset_value;
 	}
 
-// 	private double[][][] directional_vectors = new double[DIM][DIM][2];
-// 	private void calculate_directional_vectors(ColormapSelectPanel panel) {
-// 		int[][] indices = {
-// 		                  {-1,-1},
-// 		                  { 0,-1},
-// 		                  { 1,-1},
-// 		                  {-1, 0},
-// 		                  { 1, 0},
-// 		                  {-1, 1},
-// 		                  { 0, 1},
-// 		                  { 1, 1},
-// 		                  };
-// 		double[][] vectors = {
-// 		                     {-Math.sqrt(2), Math.sqrt(2)},
-// 		                     {0.0f, 1.0f},
-//                                      {Math.sqrt(2), Math.sqrt(2)},
-//                                      {1.0f, 0.0f},
-// 				     {Math.sqrt(2), -Math.sqrt(2)},
-// 				     {0.0f, -1.0f},
-// 				     {-Math.sqrt(2), -Math.sqrt(2)},
-// 				     {-1.0f, 0.0f},
-// 				     };
-//
-// 		for(int x = 0 ; x < DIM; ++x) {
-// 			for(int y = 0 ; y < DIM; ++y) {
-// 				double dx = 0.0;
-// 				double dy = 0.0;
-// 				double centre = getDatasetColor(x+y*DIM, panel);
-// 				for(int i = 0; i<8; ++i) {
-// 					int idx = (((x + indices[i][0])+DIM) % DIM) + (((y + indices[i][1])+DIM) % DIM) * DIM;
-// 					dx += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][0];
-// 					dy += Math.abs(getDatasetColor(idx, panel)-centre) * vectors[i][1];
-// 				}
-// 				directional_vectors[x][y][0] = dx;
-// 				directional_vectors[x][y][1] = dy;
-// 			}
-// 		}
-// 	}
-
 	private double[] sampleDataset(int x, int y, VectorOptionSelectPanel panel) {
 		// x and y here represent the (x,y) id of the grid-rectangle we're sampling
 		double gridx = vectorOptionSelectPanel.getVectorGridX();
@@ -443,20 +406,83 @@ class Smoke {
 		return result;
 	}
 
+	double[] calculateNormal(double[] a, double[] b) {
+		double[] n = {a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]};
+		return n;
+	}
+
+	void setNormal(GL gl, int idx, ColormapSelectPanel panel, double zscale) {
+		int[] xy = getXYFromIdx(idx);
+		int x = xy[0];
+		int y = xy[1];
+		double[] v = {
+			getDatasetColor(getIdxFromXY(x  ,y  ), panel) * zscale, // 0
+			getDatasetColor(getIdxFromXY(x-1,y  ), panel) * zscale, // 1
+			getDatasetColor(getIdxFromXY(x  ,y-1), panel) * zscale, // 2
+			getDatasetColor(getIdxFromXY(x+1,y  ), panel) * zscale, // 3
+			getDatasetColor(getIdxFromXY(x  ,y+1), panel) * zscale, // 4
+		};
+		double[][] n = {
+			calculateNormal(new double[]{ 0, 1, v[4] - v[0]}, new double[]{-1, 0, v[1] - v[0]}),
+			calculateNormal(new double[]{-1, 0, v[1] - v[0]}, new double[]{ 0,-1, v[2] - v[0]}),
+			calculateNormal(new double[]{ 0,-1, v[2] - v[0]}, new double[]{ 1, 0, v[3] - v[0]}),
+			calculateNormal(new double[]{ 1, 0, v[3] - v[0]}, new double[]{ 0, 1, v[4] - v[0]}),
+		};
+		gl.glNormal3d(
+			(n[0][0] + n[1][0] + n[2][0] + n[3][0]) / 4.0,
+			(n[0][1] + n[1][1] + n[2][1] + n[3][1]) / 4.0,
+			(n[0][2] + n[1][2] + n[2][2] + n[3][2]) / 4.0
+		);
+	}
+
 	//visualize: This is the main visualization function
 	void visualize(GL gl) {
 		if(textures[TEXTURE_COUNT-1]==-1) return;
 		int        i, j, idx; double px, py;
+		double z, zscale = Math.max(winWidth, winHeight) * 0.1;
 		double/*fftw_real*/  wn = winWidth / (double)(DIM + 1);   // Grid cell width
 		double/*fftw_real*/  hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
 
+		gl.glTranslated(winWidth/2.0, 0.0, 0.0);
+		gl.glTranslated(0.0, winHeight/2.0, 0.0);
+		gl.glRotated(rotationy, 1.0, 0.0, 0.0);
+		gl.glRotated(rotationx, 0.0, 0.0, 1.0);
+		if(scale > 0)
+			gl.glScaled(scale, scale, scale);
+		if(scale < 0)
+			gl.glScaled(1.0/(-scale), 1.0/(-scale), 1.0/(-scale));
+		gl.glTranslated(-winWidth/2.0, 0.0, 0.0);
+		gl.glTranslated(0.0, -winHeight/2.0, 0.0);
+
+		boolean SomethingChangedInTheLightingModel = false;
+		if(SomethingChangedInTheLightingModel) {
+			float[] fLightAmbient  = { 1.0f, 1.0f, 1.0f, 1.0f };
+			float[] fLightDiffuse  = { 1.0f, 1.0f, 1.0f, 1.0f };
+			float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
+			float[] fLightPosition = { 0.0f, 0.0f, /* * /(float)(2.0 * zscale)/*/1.0f/* */, 0.0f };
+			FloatBuffer LightAmbient  = FloatBuffer.wrap(fLightAmbient);
+			FloatBuffer LightDiffuse  = FloatBuffer.wrap(fLightDiffuse);
+			FloatBuffer LightSpecular  = FloatBuffer.wrap(fLightSpecular);
+			FloatBuffer LightPosition = FloatBuffer.wrap(fLightPosition);
+
+
+	// 		gl.glShadeModel(gl.GL_FLAT); // needs param
+			gl.glEnable(gl.GL_LIGHTING);
+			gl.glEnable(gl.GL_LIGHT0);
+			gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightAmbient);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightDiffuse);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR,  LightSpecular);
+	// 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
+		}
+
 		gl.glDisable(gl.GL_TEXTURE_2D);
 		gl.glEnable(gl.GL_TEXTURE_1D);
-		gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_SMOKE]);
 		gl.glDisable(gl.GL_BLEND);
 		gl.glColor4d(1.0, 1.0, 1.0, 1.0);
 
 		if (draw_smoke) {
+			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_SMOKE]);
 			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
 			for (j = 0; j < DIM - 1; j++) {		//draw smoke
 				gl.glBegin(GL.GL_TRIANGLE_STRIP);
@@ -465,122 +491,51 @@ class Smoke {
 				px = wn + (float)i * wn;
 				py = hn + (float)j * hn;
 				idx = (j * DIM) + i;
-				gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-				gl.glVertex2d(px, py);
+				z = getDatasetColor(idx, smokeColormapSelectPanel);
+				gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+				if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+				gl.glVertex3d(px, py, z * zscale);
 
 				for (i = 0; i < DIM - 1; i++) {
 					px = wn + i * wn;
 					py = hn + (j + 1) * hn;
 					idx = ((j + 1) * DIM) + i;
 
-					gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-					gl.glVertex2d(px, py);
+					z = getDatasetColor(idx, smokeColormapSelectPanel);
+					gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+					if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+					gl.glVertex3d(px, py, z * zscale);
 					px = wn + (i + 1) * wn;
 					py = hn + j * hn;
 					idx = (j * DIM) + (i + 1);
-					gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-					gl.glVertex2d(px, py);
+					z = getDatasetColor(idx, smokeColormapSelectPanel);
+					gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+					if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+					gl.glVertex3d(px, py, z * zscale);
 				}
 
 				px = wn + (float)(DIM - 1) * wn;
 				py = hn + (float)(j + 1) * hn;
 				idx = ((j + 1) * DIM) + (DIM - 1);
-				gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-				gl.glVertex2d(px, py);
+				z = getDatasetColor(idx, smokeColormapSelectPanel);
+				gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+				if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+				gl.glVertex3d(px, py, z * zscale);
 				gl.glEnd();
 			}
 		}
 
-		if (draw_vecs) {
-			//calculate_directional_vectors(vectorOptionSelectPanel);
-			gl.glDisable(gl.GL_TEXTURE_2D);
-			gl.glEnable(gl.GL_TEXTURE_1D);
-			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_SMOKE]);
-			gl.glDisable(gl.GL_BLEND);
-			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
-			gl.glColor4d(1.0, 1.0, 1.0, 1.0);
-			if (vector_type == VECTOR_TYPE_HEDGEHOG) {
-				gl.glBegin(GL.GL_LINES);				//draw velocities
-				for (i = 0; i < DIM; i++)
-					for (j = 0; j < DIM; j++) {
-						idx = (j * DIM) + i;
-						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
-						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
-						gl.glTexCoord1d(getDatasetColor(idx, vectorOptionSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
-						gl.glVertex2d(wn + i * wn, hn + j * hn);
-						gl.glVertex2d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx]);
-					}
-				gl.glEnd();
-			} else if (vector_type == VECTOR_TYPE_ARROW) {
-				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1]);
-				gl.glDisable(gl.GL_TEXTURE_1D);
-				gl.glEnable(gl.GL_TEXTURE_2D);
-				gl.glEnable(gl.GL_BLEND);
-				float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
-				float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
-				int gridx = vectorOptionSelectPanel.getVectorGridX();
-				int gridy = vectorOptionSelectPanel.getVectorGridY();
-				float spacex = (float)((winWidth  - 2 * wn) / (gridx + 0.0f));
-				float spacey = (float)((winHeight - 2 * hn) / (gridy + 0.0f));
-				gl.glPushMatrix();
-				gl.glTranslatef(winWidth / 2.0f, winHeight / 2.0f, 0);
-				double maxveclen = vectorOptionSelectPanel.get_longest_vector();
-				double maxveclenx = 0.99 * (winWidth / gridx);
-				double maxvecleny = 0.99 * (winHeight / gridy);
-				double vecscalefact = Math.min(maxveclenx, maxvecleny);
-				for (int x = 0 ; x < gridx ; ++x) {
-					for (int y = 0 ; y < gridy ; ++y) {
-						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
-						double[] result = sampleDataset(x, y, vectorOptionSelectPanel);
-						double inprod = result[1]/result[2];
-						double xdir   = result[0]/Math.abs(result[0]);
-						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;
-						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
-						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
-							size = 0.5 * (result[2] / maxveclen) * vecscalefact;
-						}
-						size = 0.5 * vecscalefact;
-						float[] color = vectorOptionSelectPanel.getGradientColor(result[3]);
-						gl.glColor3f(color[0], color[1], color[2]);
-						gl.glPushMatrix();
-						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
-						                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
-						                0.0f);
-						gl.glRotatef((float)rotation, 0, 0, 1);
-						gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
-						gl.glTexCoord2d(1.0, 0.0);
-						gl.glVertex2d( - size, - size);
-
-						gl.glTexCoord2d(0.0, 0.0);
-						gl.glVertex2d( + size, - size);
-
-						gl.glTexCoord2d(0.0, 1.0);
-						gl.glVertex2d( + size, + size);
-
-						gl.glTexCoord2d(1.0, 1.0);
-						gl.glVertex2d( - size, + size);
-						gl.glEnd();
-
-						gl.glPopMatrix();
-					}
-				}
-				gl.glPopMatrix();
-			}
-		}
-
+		gl.glDisable(gl.GL_LIGHTING);
 
 		if(draw_iso_lines) {
 			gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_LINE);
-			gl.glDisable(gl.GL_TEXTURE_2D);
-			gl.glEnable(gl.GL_TEXTURE_1D);
 			gl.glBindTexture(gl.GL_TEXTURE_1D, textures[TEXTURE_COLORMAP_ISOLINES]);
-			gl.glDisable(gl.GL_BLEND);
-			gl.glColor4d(1.0, 1.0, 1.0, 1.0);
+
 			gl.glBegin(gl.GL_LINES);
 			int    iso_n_lines    = isoLineSelectPanel.getIsoLineCount();
 			double iso_low_value  = Math.min(isoLineSelectPanel.getMinIsoValue(), isoLineSelectPanel.getMaxIsoValue());
 			double iso_high_value = Math.max(isoLineSelectPanel.getMinIsoValue(), isoLineSelectPanel.getMaxIsoValue());
-
+			double iso_clip_hack  = 128.0 / zscale; // Magix
 
 			for(int y = 0; y < DIM-1; ++y) {
 				for(int x = 0; x < DIM-1; ++x) {
@@ -610,19 +565,19 @@ class Smoke {
 							switch (msquare_lookup[lookup_index][i]) {
 								case 0: { // Top edge
 									double iso_position = ((iso_value - top_lft_value) / (top_rgt_value-top_lft_value)) * wn;
-									gl.glVertex2d(wn + x * wn + iso_position, hn + y * hn);
+									gl.glVertex3d(wn + x * wn + iso_position, hn + y * hn, iso_value * zscale + iso_clip_hack);
 								}; break;
 								case 1: { // Right edge
 									double iso_position = ((iso_value - top_rgt_value) / (btm_rgt_value-top_rgt_value)) * hn;
-									gl.glVertex2d(wn + x * wn + wn, hn + y * hn + iso_position);
+									gl.glVertex3d(wn + x * wn + wn, hn + y * hn + iso_position, iso_value * zscale + iso_clip_hack);
 								}; break;
 								case 2: { // Bottom edge
 									double iso_position = ((iso_value - btm_rgt_value) / (btm_lft_value-btm_rgt_value)) * wn;
-									gl.glVertex2d(wn + x * wn + (wn - iso_position), hn + y * hn + hn);
+									gl.glVertex3d(wn + x * wn + (wn - iso_position), hn + y * hn + hn, iso_value * zscale + iso_clip_hack);
 								}; break;
 								case 3: { // Left edge
 									double iso_position = ((iso_value - btm_lft_value) / (top_lft_value-btm_lft_value)) * hn;
-									gl.glVertex2d(wn + x * wn, hn + y * hn + (hn - iso_position));
+									gl.glVertex3d(wn + x * wn, hn + y * hn + (hn - iso_position), iso_value * zscale + iso_clip_hack);
 								}; break;
 							}
 							++i;
@@ -631,6 +586,78 @@ class Smoke {
 				}
 			}
 			gl.glEnd();
+		}
+
+		if (draw_vecs) {
+			if (vector_type == VECTOR_TYPE_HEDGEHOG) { // Fixme: These are currently b0rken
+				gl.glBegin(GL.GL_LINES);				//draw velocities
+				for (i = 0; i < DIM; i++)
+					for (j = 0; j < DIM; j++) {
+						idx = (j * DIM) + i;
+						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
+						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
+						z = getDatasetColor(idx, vectorOptionSelectPanel);
+						gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
+						gl.glVertex3d(wn + i * wn, hn + j * hn, z * zscale);
+						gl.glVertex3d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx], z * zscale);
+					}
+				gl.glEnd();
+			} else if (vector_type == VECTOR_TYPE_ARROW) {
+				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1]);
+				gl.glDisable(gl.GL_TEXTURE_1D);
+				gl.glEnable(gl.GL_TEXTURE_2D);
+				gl.glEnable(gl.GL_BLEND);
+				float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
+				float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
+				int gridx = vectorOptionSelectPanel.getVectorGridX();
+				int gridy = vectorOptionSelectPanel.getVectorGridY();
+				float spacex = (float)((winWidth  - 2 * wn) / (gridx + 0.0f));
+				float spacey = (float)((winHeight - 2 * hn) / (gridy + 0.0f));
+				gl.glPushMatrix();
+				gl.glTranslatef(winWidth / 2.0f, winHeight / 2.0f, 0);
+				double maxveclen = vectorOptionSelectPanel.get_longest_vector();
+				double maxveclenx = 0.99 * (winWidth / gridx);
+				double maxvecleny = 0.99 * (winHeight / gridy);
+				double vecscalefact = Math.min(maxveclenx, maxvecleny);
+				for (int x = 0 ; x < gridx ; ++x) {
+					for (int y = 0 ; y < gridy ; ++y) {
+						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
+						double[] result = sampleDataset(x, y, vectorOptionSelectPanel);
+						z = result[3] * zscale;
+						double inprod = result[1]/result[2];
+						double xdir   = result[0]/Math.abs(result[0]);
+						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;
+						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
+						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
+							size = 0.5 * (result[2] / maxveclen) * vecscalefact;
+						}
+						size = 0.5 * vecscalefact;
+						float[] color = vectorOptionSelectPanel.getGradientColor(result[3]);
+						gl.glColor3f(color[0], color[1], color[2]);
+						gl.glPushMatrix();
+						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
+						                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
+						                0.0f);
+						gl.glRotatef((float)rotation, 0, 0, 1);
+						gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
+						gl.glTexCoord2d(1.0, 0.0);
+						gl.glVertex3d( - size, - size, z);
+
+						gl.glTexCoord2d(0.0, 0.0);
+						gl.glVertex3d( + size, - size, z);
+
+						gl.glTexCoord2d(0.0, 1.0);
+						gl.glVertex3d( + size, + size, z);
+
+						gl.glTexCoord2d(1.0, 1.0);
+						gl.glVertex3d( - size, + size, z);
+						gl.glEnd();
+
+						gl.glPopMatrix();
+					}
+				}
+				gl.glPopMatrix();
+			}
 		}
 
 		gl.glFlush(); // forces all opengl commands to complete. Blocking!!
@@ -684,7 +711,9 @@ class Smoke {
 		gl.glViewport(0, 0, w, h);
 		gl.glMatrixMode(GL.GL_PROJECTION);
 		gl.glLoadIdentity();
-		glu.gluOrtho2D(0.0, (double)w, 0.0, (double)h);
+// 		glu.gluOrtho2D(0.0, (double)w, 0.0, (double)h);
+// 		glu.gluPerspective(92.0, (double)w/(double)h, -Math.max(w,h), Math.max(w,h));
+		gl.glOrtho(0.0, (double)w, 0.0, (double)h, -Math.max(w,h), Math.max(w,h) );
 		winWidth = w; winHeight = h;
 	}
 
@@ -895,7 +924,8 @@ class Smoke {
 	GLCanvas panel;
 	JFrame frame;
 	public Smoke() {
-
+		rotationx = 0;
+		rotationy = 0;
 		init_simulation(DIM);	//initialize the simulation data structures
 
 		// initialize GUI
@@ -910,7 +940,10 @@ class Smoke {
 		}
 		panel = new GLCanvas(caps);
 		panel.addGLEventListener(new MyGLEventListener());
-		panel.addMouseMotionListener(new MouseListener());
+		MouseListener ml = new MouseListener();
+		panel.addMouseMotionListener(ml);
+		panel.addMouseListener(ml);
+		panel.addMouseWheelListener(ml);
 		panel.addKeyListener(new MyKeyListener());
 		panel.setFocusable(true);
 
@@ -927,6 +960,8 @@ class Smoke {
 		Dimension d = Toolkit.getDefaultToolkit().getScreenSize();
 		frame.setLocation((int)(d.getWidth() / 2) - (frame.getWidth() / 2), (int)(d.getHeight() / 2) - (frame.getHeight() / 2));
 
+
+
 		// show window
 		frame.setVisible(true);
 	}
@@ -938,10 +973,67 @@ class Smoke {
 		}
 	}
 
-	class MouseListener extends MouseMotionAdapter {
+	class MouseListener implements MouseInputListener, MouseWheelListener {
+		private int mouse_button_state = 0;
+
+		public void mousePressed(MouseEvent e) {
+			if(e.getButton() == MouseEvent.BUTTON1) {
+				mouse_button_state |= 1;
+			}
+			if(e.getButton() == MouseEvent.BUTTON2) {
+				mouse_button_state |= 2;
+			}
+			if(e.getButton() == MouseEvent.BUTTON3) {
+				mouse_button_state |= 4;
+			}
+			mousex = e.getX();
+			mousex_prev = mousex;
+			mousey = e.getY();
+			mousey_prev = mousey;
+		}
+
+		public void mouseClicked(MouseEvent e) {}
+		public void mouseEntered(MouseEvent e) {}
+		public void mouseExited(MouseEvent e) {}
+		public void mouseMoved(MouseEvent e) {}
+
+		public void mouseWheelMoved(MouseWheelEvent e) {
+			int notches = e.getWheelRotation();
+			if (notches < 0) { // Mouse wheel moved UP
+				scale -= 1.0;
+			}
+			else { // Mouse wheel moved DOWN
+				scale += 1.0;
+			}
+		}
+
+		public void mouseReleased(MouseEvent e) {
+			if(e.getButton() == MouseEvent.BUTTON1) {
+				mouse_button_state &= ~1;
+			}
+			if(e.getButton() == MouseEvent.BUTTON2) {
+				mouse_button_state &= ~2;
+				rotationx = 0.0;
+				rotationy = 0.0;
+				scale     = 0.0;
+			}
+			if(e.getButton() == MouseEvent.BUTTON3) {
+				mouse_button_state &= ~4;
+			}
+		}
+
 		public void mouseDragged(MouseEvent e) {
-			drag(e.getX(), e.getY());
-			//Flow.this.panel.repaint();
+			if((mouse_button_state&1)!=0) {
+				drag(e.getX(), e.getY());
+			}
+			if((mouse_button_state&4)!=0) {
+				mousex = e.getX();
+				mousey = e.getY();
+				rotationx += ((mousex - mousex_prev) / 10.0) % 360.0;
+				rotationy += ((mousey - mousey_prev) / 10.0) % 360.0;
+				mousex_prev = mousex;
+				mousey_prev = mousey;
+			}
 		}
 	}
 
@@ -977,6 +1069,10 @@ class Smoke {
 			gl.setSwapInterval(1); //Meh seems NOP in linux :(
 // 			gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glEnable(gl.GL_DEPTH_TEST);
+			gl.glDepthFunc(gl.GL_LEQUAL);
+			gl.glDepthMask(true);
+			gl.glEnable(gl.GL_NORMALIZE);
 			textures[TEXTURE_ARROW_1] = loadTexture(gl, "arrow-1.png");
 			textures[TEXTURE_ARROW_2] = loadTexture(gl, "arrow-2.png");
 			textures[TEXTURE_ARROW_3] = loadTexture(gl, "arrow-3.png");
