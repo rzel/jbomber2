@@ -330,10 +330,10 @@ class Smoke {
 		return dataset_value;
 	}
 
-	private double[] sampleDataset(int x, int y, VectorOptionSelectPanel panel) {
+	private double[] sampleDataset(int x, int y, ColormapSelectPanel panel, double gridx, double gridy) {
 		// x and y here represent the (x,y) id of the grid-rectangle we're sampling
-		double gridx = vectorOptionSelectPanel.getVectorGridX();
-		double gridy = vectorOptionSelectPanel.getVectorGridY();
+// 		double gridx = vectorOptionSelectPanel.getVectorGridX();
+// 		double gridy = vectorOptionSelectPanel.getVectorGridY();
 		double cells_per_sample_x = DIM / gridx;
 		double cells_per_sample_y = DIM / gridy;
 		double dim = (double)DIM;
@@ -359,6 +359,7 @@ class Smoke {
 		double avgx = 0.0;
 		double avgy = 0.0;
 		int samples = 0;
+		double[] result = new double[5];
 		for (double sample_x = -(cells_per_sample_x / 2.0); sample_x < cells_per_sample_x / 2.0; sample_x += 1.0) {
 			for (double sample_y = -(cells_per_sample_y / 2.0); sample_y < cells_per_sample_y / 2.0; sample_y += 1.0) {
 				double px, py;
@@ -366,40 +367,40 @@ class Smoke {
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell1s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell1s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
 				double cell1vx = vx[(int)(px)+(int)(py)*DIM];
 				double cell1vy = vy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell2s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell2s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
 				double cell2vx = vx[(int)(px)+(int)(py)*DIM];
 				double cell2vy = vy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell3s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell3s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
 				double cell3vx = vx[(int)(px)+(int)(py)*DIM];
 				double cell3vy = vy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
-				double cell4s  = getDatasetColor((int)(px)+(int)(py)*DIM, vectorOptionSelectPanel);
+				double cell4s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
 				double cell4vx = vx[(int)(px)+(int)(py)*DIM];
 				double cell4vy = vy[(int)(px)+(int)(py)*DIM];
-				avgs += (weight_sx * cell1s + weight_nnx * cell2s) * weight_sy + (weight_sx * cell3s + weight_nnx * cell4s) * weight_nny;
+				double cavg = (weight_sx * cell1s + weight_nnx * cell2s) * weight_sy + (weight_sx * cell3s + weight_nnx * cell4s) * weight_nny;
+				avgs += cavg;
 				avgx += (weight_sx * cell1vx + weight_nnx * cell2vx) * weight_sy + (weight_sx * cell3vx + weight_nnx * cell4vx) * weight_nny;
 				avgy += (weight_sy * cell1vy + weight_nny * cell2vy) * weight_sy + (weight_sy * cell3vy + weight_nny * cell4vy) * weight_nny;
 				++samples;
+				result[4] = Math.max(result[4], cavg);
 			}
 		}
 
 		double len = Math.sqrt(avgx*avgx + avgy*avgy);
-		panel.update_longest_vector(len);
-		double[] result = new double[4];
 		result[0] = avgx;
 		result[1] = avgy;
 		result[2] = len;
@@ -444,6 +445,40 @@ class Smoke {
 		double/*fftw_real*/  wn = winWidth / (double)(DIM + 1);   // Grid cell width
 		double/*fftw_real*/  hn = winHeight / (double)(DIM + 1);  // Grid cell heigh
 
+
+		if (heightplotSelectPanel.isShadingEnabled()) {
+				gl.glEnable(gl.GL_LIGHTING);
+		}
+		boolean SomethingChangedInTheLightingModel = heightplotSelectPanel.getSomethingChangedInTheLightingModel();
+
+		if(SomethingChangedInTheLightingModel) {
+			heightplotSelectPanel.setSomethingChangedInTheLightingModel(false);
+			float[] fLightAmbient  = heightplotSelectPanel.getLightAmbientColor();
+			float[] fLightDiffuse  = heightplotSelectPanel.getLightDiffuseColor();
+			float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
+			float[] fLightPosition = heightplotSelectPanel.getLightPosition();
+
+			FloatBuffer LightAmbient  = FloatBuffer.wrap(fLightAmbient);
+			FloatBuffer LightDiffuse  = FloatBuffer.wrap(fLightDiffuse);
+			FloatBuffer LightSpecular  = FloatBuffer.wrap(fLightSpecular);
+			FloatBuffer LightPosition = FloatBuffer.wrap(fLightPosition);
+
+			if (heightplotSelectPanel.getFlatShading()) {
+					gl.glShadeModel(gl.GL_FLAT); // needs param
+			}
+			else {
+					gl.glShadeModel(gl.GL_SMOOTH); // needs param
+			}
+
+			gl.glEnable(gl.GL_LIGHT0);
+			gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightAmbient);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightDiffuse);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR,  LightSpecular);
+	 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
+		}
+
 		gl.glTranslated(winWidth/2.0, 0.0, 0.0);
 		gl.glTranslated(0.0, winHeight/2.0, 0.0);
 		gl.glRotated(rotationy, 1.0, 0.0, 0.0);
@@ -454,43 +489,6 @@ class Smoke {
 			gl.glScaled(1.0/(-scale), 1.0/(-scale), 1.0/(-scale));
 		gl.glTranslated(-winWidth/2.0, 0.0, 0.0);
 		gl.glTranslated(0.0, -winHeight/2.0, 0.0);
-
-                if (heightplotSelectPanel.isShadingEnabled()) {
-                    gl.glEnable(gl.GL_LIGHTING);
-                }              
-//		boolean SomethingChangedInTheLightingModel = true;
-                boolean SomethingChangedInTheLightingModel = heightplotSelectPanel.getSomethingChangedInTheLightingModel();
-                
-		if(SomethingChangedInTheLightingModel) {
-                        heightplotSelectPanel.setSomethingChangedInTheLightingModel(false);
-//			float[] fLightAmbient  = { 1.0f, 1.0f, 1.0f, 1.0f };
-//			float[] fLightDiffuse  = { 1.0f, 1.0f, 1.0f, 1.0f };
-//			float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
-//			float[] fLightPosition = { 0.0f, 0.0f, /* * /(float)(2.0 * zscale)/*/1.0f/* */, 0.0f };
-                        float[] fLightAmbient  = heightplotSelectPanel.getLightAmbientColor();
-                        float[] fLightDiffuse  = heightplotSelectPanel.getLightDiffuseColor();
-                        float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
-                        float[] fLightPosition = heightplotSelectPanel.getLightPosition();
-                        
-			FloatBuffer LightAmbient  = FloatBuffer.wrap(fLightAmbient);
-			FloatBuffer LightDiffuse  = FloatBuffer.wrap(fLightDiffuse);
-			FloatBuffer LightSpecular  = FloatBuffer.wrap(fLightSpecular);
-			FloatBuffer LightPosition = FloatBuffer.wrap(fLightPosition);
-
-                        if (heightplotSelectPanel.getFlatShading()) {
-                            gl.glShadeModel(gl.GL_FLAT); // needs param
-                        }
-                        else {
-                            gl.glShadeModel(gl.GL_SMOOTH); // needs param    
-                        }                        
-                        
-			gl.glEnable(gl.GL_LIGHT0);
-			gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST);
-			gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightAmbient);
-			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightDiffuse);
-			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR,  LightSpecular);
-	 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
-		}
 
 		gl.glDisable(gl.GL_TEXTURE_2D);
 		gl.glEnable(gl.GL_TEXTURE_1D);
@@ -507,9 +505,9 @@ class Smoke {
 				px = wn + (float)i * wn;
 				py = hn + (float)j * hn;
 				idx = (j * DIM) + i;
-				z = getDatasetColor(idx, smokeColormapSelectPanel);
-				gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-				if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+				gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+				z = getDatasetColor(idx, heightplotSelectPanel);
+				if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, heightplotSelectPanel, zscale);
 				gl.glVertex3d(px, py, z * zscale);
 
 				for (i = 0; i < DIM - 1; i++) {
@@ -517,25 +515,25 @@ class Smoke {
 					py = hn + (j + 1) * hn;
 					idx = ((j + 1) * DIM) + i;
 
-					z = getDatasetColor(idx, smokeColormapSelectPanel);
-					gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-					if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+					gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+					z = getDatasetColor(idx, heightplotSelectPanel);
+					if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, heightplotSelectPanel,zscale);
 					gl.glVertex3d(px, py, z * zscale);
 					px = wn + (i + 1) * wn;
 					py = hn + j * hn;
 					idx = (j * DIM) + (i + 1);
-					z = getDatasetColor(idx, smokeColormapSelectPanel);
-					gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-					if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+					gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+					z = getDatasetColor(idx, heightplotSelectPanel);
+					if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, heightplotSelectPanel,zscale);
 					gl.glVertex3d(px, py, z * zscale);
 				}
 
 				px = wn + (float)(DIM - 1) * wn;
 				py = hn + (float)(j + 1) * hn;
 				idx = ((j + 1) * DIM) + (DIM - 1);
-				z = getDatasetColor(idx, smokeColormapSelectPanel);
-				gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-				if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+				gl.glTexCoord1d(getDatasetColor(idx, smokeColormapSelectPanel) * texture_fill[TEXTURE_COLORMAP_SMOKE]);
+				z = getDatasetColor(idx, heightplotSelectPanel);
+				if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, heightplotSelectPanel,zscale);
 				gl.glVertex3d(px, py, z * zscale);
 				gl.glEnd();
 			}
@@ -565,6 +563,11 @@ class Smoke {
 					double btm_lft_value = getDatasetColor(idx_btm_lft, isoLineSelectPanel);
 					double btm_rgt_value = getDatasetColor(idx_btm_rgt, isoLineSelectPanel);
 
+					double htop_lft_value = getDatasetColor(idx_top_lft, heightplotSelectPanel);
+					double htop_rgt_value = getDatasetColor(idx_top_rgt, heightplotSelectPanel);
+					double hbtm_lft_value = getDatasetColor(idx_btm_lft, heightplotSelectPanel);
+					double hbtm_rgt_value = getDatasetColor(idx_btm_rgt, heightplotSelectPanel);
+
 					if(iso_high_value - iso_low_value < 0.001) iso_n_lines = 1; // optimalize ftw
 					for(int n = 0; n < iso_n_lines; ++n) {
 						double iso_value = iso_low_value + (((iso_high_value - iso_low_value) / (double)(iso_n_lines+1)) * (double)(n+1));
@@ -580,20 +583,28 @@ class Smoke {
 						while( msquare_lookup[lookup_index][i] != -1 ) {
 							switch (msquare_lookup[lookup_index][i]) {
 								case 0: { // Top edge
-									double iso_position = ((iso_value - top_lft_value) / (top_rgt_value-top_lft_value)) * wn;
-									gl.glVertex3d(wn + x * wn + iso_position, hn + y * hn, iso_value * zscale + iso_clip_hack);
+									double iso_position = ((iso_value - top_lft_value) / (top_rgt_value-top_lft_value));
+									z = iso_position * htop_rgt_value + (1.0-iso_position)*htop_lft_value;
+									iso_position *= wn;
+									gl.glVertex3d(wn + x * wn + iso_position, hn + y * hn, z * zscale + iso_clip_hack);
 								}; break;
 								case 1: { // Right edge
-									double iso_position = ((iso_value - top_rgt_value) / (btm_rgt_value-top_rgt_value)) * hn;
-									gl.glVertex3d(wn + x * wn + wn, hn + y * hn + iso_position, iso_value * zscale + iso_clip_hack);
+									double iso_position = ((iso_value - top_rgt_value) / (btm_rgt_value-top_rgt_value));
+									z = iso_position * hbtm_rgt_value + (1.0-iso_position)*htop_rgt_value;
+									iso_position *= hn;
+									gl.glVertex3d(wn + x * wn + wn, hn + y * hn + iso_position, z * zscale + iso_clip_hack);
 								}; break;
 								case 2: { // Bottom edge
-									double iso_position = ((iso_value - btm_rgt_value) / (btm_lft_value-btm_rgt_value)) * wn;
-									gl.glVertex3d(wn + x * wn + (wn - iso_position), hn + y * hn + hn, iso_value * zscale + iso_clip_hack);
+									double iso_position = ((iso_value - btm_rgt_value) / (btm_lft_value-btm_rgt_value));
+									z = iso_position * hbtm_lft_value + (1.0-iso_position)*hbtm_rgt_value;
+									iso_position *= wn;
+									gl.glVertex3d(wn + x * wn + (wn - iso_position), hn + y * hn + hn, z * zscale + iso_clip_hack);
 								}; break;
 								case 3: { // Left edge
-									double iso_position = ((iso_value - btm_lft_value) / (top_lft_value-btm_lft_value)) * hn;
-									gl.glVertex3d(wn + x * wn, hn + y * hn + (hn - iso_position), iso_value * zscale + iso_clip_hack);
+									double iso_position = ((iso_value - btm_lft_value) / (top_lft_value-btm_lft_value));
+									z = iso_position * htop_lft_value + (1.0-iso_position)*hbtm_lft_value;
+									iso_position *= hn;
+									gl.glVertex3d(wn + x * wn, hn + y * hn + (hn - iso_position), z * zscale + iso_clip_hack);
 								}; break;
 							}
 							++i;
@@ -612,16 +623,17 @@ class Smoke {
 						idx = (j * DIM) + i;
 						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
 						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
-						z = getDatasetColor(idx, vectorOptionSelectPanel);
+						z = getDatasetColor(idx, heightplotSelectPanel);
 						gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
 						gl.glVertex3d(wn + i * wn, hn + j * hn, z * zscale);
 						gl.glVertex3d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx], z * zscale);
 					}
 				gl.glEnd();
 			} else if (vector_type == VECTOR_TYPE_ARROW) {
-				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1]);
+				gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
 				gl.glDisable(gl.GL_TEXTURE_1D);
 				gl.glEnable(gl.GL_TEXTURE_2D);
+				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1]);
 				gl.glEnable(gl.GL_BLEND);
 				float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
 				float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
@@ -635,38 +647,42 @@ class Smoke {
 				double maxveclenx = 0.99 * (winWidth / gridx);
 				double maxvecleny = 0.99 * (winHeight / gridy);
 				double vecscalefact = Math.min(maxveclenx, maxvecleny);
+				double vec_clip_hack  = 128.0 / zscale; // Magix
 				for (int x = 0 ; x < gridx ; ++x) {
 					for (int y = 0 ; y < gridy ; ++y) {
 						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
-						double[] result = sampleDataset(x, y, vectorOptionSelectPanel);
-						z = result[3] * zscale;
+						double[] result = sampleDataset(x, y, vectorOptionSelectPanel, vectorOptionSelectPanel.getVectorGridX(), vectorOptionSelectPanel.getVectorGridY());
+						vectorOptionSelectPanel.update_longest_vector(result[2]);
 						double inprod = result[1]/result[2];
 						double xdir   = result[0]/Math.abs(result[0]);
 						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;
 						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
 						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
-							size = 0.5 * (result[2] / maxveclen) * vecscalefact;
+							size = 0.5 * (result[2] / maxveclen) * (vecscalefact * vector_scalefactor) + vector_size;
 						}
-						size = 0.5 * vecscalefact;
+// 						size = 0.5 * vecscalefact;
 						float[] color = vectorOptionSelectPanel.getGradientColor(result[3]);
+
+						result = sampleDataset(x, y, heightplotSelectPanel, vectorOptionSelectPanel.getVectorGridX(), vectorOptionSelectPanel.getVectorGridY());
+
 						gl.glColor3f(color[0], color[1], color[2]);
-						gl.glPushMatrix();
+							gl.glPushMatrix();
 						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
 						                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
 						                0.0f);
 						gl.glRotatef((float)rotation, 0, 0, 1);
 						gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
 						gl.glTexCoord2d(1.0, 0.0);
-						gl.glVertex3d( - size, - size, z);
+						gl.glVertex3d( - size, - size, result[4] * zscale + vec_clip_hack);
 
 						gl.glTexCoord2d(0.0, 0.0);
-						gl.glVertex3d( + size, - size, z);
+						gl.glVertex3d( + size, - size, result[4] * zscale + vec_clip_hack);
 
 						gl.glTexCoord2d(0.0, 1.0);
-						gl.glVertex3d( + size, + size, z);
+						gl.glVertex3d( + size, + size, result[4] * zscale + vec_clip_hack);
 
 						gl.glTexCoord2d(1.0, 1.0);
-						gl.glVertex3d( - size, + size, z);
+						gl.glVertex3d( - size, + size, result[4] * zscale + vec_clip_hack);
 						gl.glEnd();
 
 						gl.glPopMatrix();
@@ -696,6 +712,8 @@ class Smoke {
 		vectorOptionSelectPanel.reset_longest_vector();
 		isoLineSelectPanel.reset_mindataset_value();
 		isoLineSelectPanel.reset_maxdataset_value();
+		heightplotSelectPanel.reset_mindataset_value();
+		heightplotSelectPanel.reset_maxdataset_value();
 	}
 	static long avg_begin      = 0;
 	static long avg_begin_prev = 0;
@@ -935,7 +953,7 @@ class Smoke {
 
                 heightplotSelectPanel = new HeightplotSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
                 tabPane.addTab("Heightplot", heightplotSelectPanel);
-                
+
 		tabPane.setSelectedIndex(1);
 		return tabPane;
 	}
