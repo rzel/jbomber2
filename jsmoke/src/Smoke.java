@@ -96,6 +96,7 @@ class Smoke {
 	private ColormapSelectPanel smokeColormapSelectPanel;
 	private VectorOptionSelectPanel vectorOptionSelectPanel;
         private IsoLineSelectPanel isoLineSelectPanel;
+        private HeightplotSelectPanel heightplotSelectPanel;
 	//------ SIMULATION CODE STARTS HERE -----------------------------------------------------------------
 
 	/**init_simulation: Initialize simulation data structures as a function of the grid size 'n'.
@@ -454,26 +455,41 @@ class Smoke {
 		gl.glTranslated(-winWidth/2.0, 0.0, 0.0);
 		gl.glTranslated(0.0, -winHeight/2.0, 0.0);
 
-		boolean SomethingChangedInTheLightingModel = false;
+                if (heightplotSelectPanel.isShadingEnabled()) {
+                    gl.glEnable(gl.GL_LIGHTING);
+                }              
+//		boolean SomethingChangedInTheLightingModel = true;
+                boolean SomethingChangedInTheLightingModel = heightplotSelectPanel.getSomethingChangedInTheLightingModel();
+                
 		if(SomethingChangedInTheLightingModel) {
-			float[] fLightAmbient  = { 1.0f, 1.0f, 1.0f, 1.0f };
-			float[] fLightDiffuse  = { 1.0f, 1.0f, 1.0f, 1.0f };
-			float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
-			float[] fLightPosition = { 0.0f, 0.0f, /* * /(float)(2.0 * zscale)/*/1.0f/* */, 0.0f };
+                        heightplotSelectPanel.setSomethingChangedInTheLightingModel(false);
+//			float[] fLightAmbient  = { 1.0f, 1.0f, 1.0f, 1.0f };
+//			float[] fLightDiffuse  = { 1.0f, 1.0f, 1.0f, 1.0f };
+//			float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
+//			float[] fLightPosition = { 0.0f, 0.0f, /* * /(float)(2.0 * zscale)/*/1.0f/* */, 0.0f };
+                        float[] fLightAmbient  = heightplotSelectPanel.getLightAmbientColor();
+                        float[] fLightDiffuse  = heightplotSelectPanel.getLightDiffuseColor();
+                        float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
+                        float[] fLightPosition = heightplotSelectPanel.getLightPosition();
+                        
 			FloatBuffer LightAmbient  = FloatBuffer.wrap(fLightAmbient);
 			FloatBuffer LightDiffuse  = FloatBuffer.wrap(fLightDiffuse);
 			FloatBuffer LightSpecular  = FloatBuffer.wrap(fLightSpecular);
 			FloatBuffer LightPosition = FloatBuffer.wrap(fLightPosition);
 
-
-	// 		gl.glShadeModel(gl.GL_FLAT); // needs param
-			gl.glEnable(gl.GL_LIGHTING);
+                        if (heightplotSelectPanel.getFlatShading()) {
+                            gl.glShadeModel(gl.GL_FLAT); // needs param
+                        }
+                        else {
+                            gl.glShadeModel(gl.GL_SMOOTH); // needs param    
+                        }                        
+                        
 			gl.glEnable(gl.GL_LIGHT0);
 			gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightAmbient);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightDiffuse);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR,  LightSpecular);
-	// 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
+	 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
 		}
 
 		gl.glDisable(gl.GL_TEXTURE_2D);
@@ -493,7 +509,7 @@ class Smoke {
 				idx = (j * DIM) + i;
 				z = getDatasetColor(idx, smokeColormapSelectPanel);
 				gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-				if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+				if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
 				gl.glVertex3d(px, py, z * zscale);
 
 				for (i = 0; i < DIM - 1; i++) {
@@ -503,14 +519,14 @@ class Smoke {
 
 					z = getDatasetColor(idx, smokeColormapSelectPanel);
 					gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-					if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+					if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
 					gl.glVertex3d(px, py, z * zscale);
 					px = wn + (i + 1) * wn;
 					py = hn + j * hn;
 					idx = (j * DIM) + (i + 1);
 					z = getDatasetColor(idx, smokeColormapSelectPanel);
 					gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-					if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+					if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
 					gl.glVertex3d(px, py, z * zscale);
 				}
 
@@ -519,7 +535,7 @@ class Smoke {
 				idx = ((j + 1) * DIM) + (DIM - 1);
 				z = getDatasetColor(idx, smokeColormapSelectPanel);
 				gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);
-				if(SomethingChangedInTheLightingModel) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
+				if(heightplotSelectPanel.isShadingEnabled()) setNormal(gl, idx, smokeColormapSelectPanel,zscale);
 				gl.glVertex3d(px, py, z * zscale);
 				gl.glEnd();
 			}
@@ -917,6 +933,9 @@ class Smoke {
                 isoLineSelectPanel = new IsoLineSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
                 tabPane.addTab("ISO line options", isoLineSelectPanel);
 
+                heightplotSelectPanel = new HeightplotSelectPanel(0, 1/*(int)maxvy_lastframe+1*/, 2047, ColormapSelectPanel.COLOR_CUSTOM, frame);
+                tabPane.addTab("Heightplot", heightplotSelectPanel);
+                
 		tabPane.setSelectedIndex(1);
 		return tabPane;
 	}

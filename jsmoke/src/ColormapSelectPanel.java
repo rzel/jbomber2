@@ -51,11 +51,16 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
 	int custom_gradient_interpolate_mode = 0;
 
+        protected JPanel datasetSelectPanel;
+        protected JPanel scalingSelectPanel;
+        protected JPanel colormapPreviewPanel;
+        protected JPanel colormapSelectPanel;
+        
 	public ColormapSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
-		add(initDatasetSelectPanel());
-		add(initScalingSelectPanel());
-		add(initColormapPreviewPanel());
-		add(initColormapSelectPanel(frame));
+		add(datasetSelectPanel = initDatasetSelectPanel());
+		add(scalingSelectPanel = initScalingSelectPanel());
+		add(colormapPreviewPanel = initColormapPreviewPanel());
+		add(colormapSelectPanel = initColormapSelectPanel(frame));
 
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -306,16 +311,22 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		clampSelectPanel.add(new JSpinner(maxClampSelectSpinnerModel));
 
 		JPanel scaleSelectPanel = new JPanel();
-		scaleSelectPanel.setLayout(new BoxLayout(scaleSelectPanel, BoxLayout.Y_AXIS));
+/*		scaleSelectPanel.setLayout(new BoxLayout(scaleSelectPanel, BoxLayout.Y_AXIS));
 		scaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		clampSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		colorCountLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		colorCountSlider.setAlignmentX(Component.LEFT_ALIGNMENT);
+		colorCountSlider.setAlignmentX(Component.LEFT_ALIGNMENT);*/
+                scaleSelectPanel.setLayout(new SpringLayout());
+                scaleSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);            
 		scaleSelectPanel.setBorder(new TitledBorder("Scaling:"));
 		scaleSelectPanel.add(scaleButton);
 		scaleSelectPanel.add(clampSelectPanel);
 		scaleSelectPanel.add(colorCountLabel);
 		scaleSelectPanel.add(colorCountSlider);
+
+                SpringUtilities.makeCompactGrid(scaleSelectPanel, 4, 1,  // rows, cols
+		                                                  6, 6,  // initX, initY
+		                                                  6, 6); // xPad, yPad                
 		return scaleSelectPanel;
 	}
 
