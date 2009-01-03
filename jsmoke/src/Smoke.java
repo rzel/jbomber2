@@ -633,7 +633,7 @@ class Smoke {
 				gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
 				gl.glDisable(gl.GL_TEXTURE_1D);
 				gl.glEnable(gl.GL_TEXTURE_2D);
-				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1]);
+				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_2]);
 				gl.glEnable(gl.GL_BLEND);
 				float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
 				float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
