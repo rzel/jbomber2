@@ -108,7 +108,7 @@
 	\section{Divergence}
         In the next stage of the assignment we implemented the possibility to view the divergence of $|v|$ and $|f|$. This was relatively easy, because the mechanism to select $div~v$ and $div~f$ had to be added in only one component of our program. The implementation of the value of these divergences on a grid point in our simulation was a little bit more complicated.
 
-        The divergence $div~v$ is given by $div~v = \nabla \cdot v = \frac{\partial v_x}{\partial x} + \frac{\partial v_y}{\partial y}$ and the divergence of $|f|$ is $div~f = \nabla \cdot f = \frac{\partial f_x}{\partial x} + \frac{\partial f_y}{\partial y}$. To implement this, we had to determine the partial derivatives of $|f|$ and $|v|$. We have chosen to implement this by summing the values of respectively the data sets $|f|$ and $|v|$ around a grid point and take the mean of these sums.
+        According to K.~Crane et al. in \cite{kcilst}, the divergence $div~v$ is given by $div~v = \nabla \cdot v = \frac{\partial v_x}{\partial x} + \frac{\partial v_y}{\partial y}$ and the divergence of $|f|$ is $div~f = \nabla \cdot f = \frac{\partial f_x}{\partial x} + \frac{\partial f_y}{\partial y}$ (notice that the 3D case was described in this work, we reduced it to the 2D case). To implement this, we had to determine the partial derivatives of $|f|$ and $|v|$. We have chosen to implement this by summing the values of respectively the data sets $|f|$ and $|v|$ around a grid point and take the mean of these sums.
 
         So put together in a formula, where $x$ and $y$ denote the coordinates of the grid points to determine $div~f$ or $div~v$: $div^*~v = \frac{1}{2}((v_{x-1,y} - v_{x+1,y}) + (v_{x,y-1} - v_{x,y+1}))$ and $div^*~f = \frac{1}{2}((f_{x-1,y} - f_{x+1,y}) + (f_{x,y-1} - f_{x,y+1}))$. Here $f_{x,y}$ and $v_{x,y}$ depict the values of respectively $f$ and $v$ on grid point $(x,y)$.   An example of the visualization of the divergence of $|v|$ is shown in Figure \ref{fig:step4}.
 		\begin{figure}[h]
@@ -119,9 +119,9 @@
 		\clearpage
 	\section{Isosurfaces (Isolines)}
         In this stage we had to implement the isoline technique. This part of the assignment consisted of two separate parts: adding functionality to place an isoline for one value of $\rho$, namely $\rho_0$ and placing a number of isolines between two values of $\rho$, being $\rho_1$ and $\rho_2$. We have chosen to generalize this part of the assignment. In our simulation it is not only possible to draw isolines only on values of $\rho$, but also on $|v|, |f|, div~v$ and $div~f$.
-        
+
         As can bee seen in Figure \ref{fig:step5} a new tab with properties for the isolines was added. Here (amongst color and data set options) $\rho_1$(Low) and $\rho_2$(High) and the number of iso lines that should be drawn between these two can be specified. If $\rho_1 = \rho_2$, only one iso line is drawn. In our visualization this is the way to select a $\rho_0$.
-        
+
         Our isolines are constructed from a number of partial isolines. These partial isolines together form a closed isoline. We use a lookup table to determine how a partial isoline should be drawn.
 		\begin{figure}[h]
 		\centering
@@ -158,6 +158,14 @@
 		For the actual implementation of the stream tubes the most challenging part will be the actual construction of the stream tube's geometry. Obtaining the 3-dimensional dataset is fairly easy as it simply involves keeping the last $N$ datasets arrays, which can simply be achieved by placing the current dataset arrays in an encompassing array, and generating new dataset arrays and deleting the oldest dataset arrays every frame. From here on tracing a stream line should be possible be using a similar technique as in step 5b, but in 3-dimensions. It might be possible to construct and output the geometry for the stream tube as the stream line is traced.
 
 		Finally we need to look at where exactly in the current visualization we will place the stream tubes, as they might interfere with the heightplot. One solution might be to force the user to choose between either a heightplot or stream tubes.
-\chapter{Conclusion}
-% klein stukje slap gezever
+\chapter{Evaluation}
+    This assignment was meant to ``Construct an interactive application that implements several visualization techniques for a real-time simulation of fluid flow''. Up to this point, we have been able to finish the biggest part of the assignment. We have implemented all the required parts of the assignment except stream tubes.
+    
+    We 
+\begin{thebibliography}{99}
+\bibitem{kcilst} Keenan~Crane, Ignacio~Llamas and Sarah~Tariq.\\
+        \textit{Real-Time Simulation and Rendering of 3D Fluids}, Chapter 30.\\
+        http://developer.download.nvidia.com/books/gpu\_gems\_3/samples/gems3\_ch30.pdf.\\
+\end{thebibliography}
+
 \end{document}
