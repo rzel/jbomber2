@@ -159,16 +159,16 @@
 		The final step in the development of the program is adding a visualization using stream tubes. Unfortunately this part of the program is still under development at the time of writing, and as such we can not provide a screenshot at this time. We do hope to have completed implementation of stream tubes before the final presentation.
 		Since we do not yet have a working stream tube implementation we also do not yet have an interface for controlling the visualization. We can however describe the controls that we plan to implement, and a possible approach that we could take. The controls that we need to implement are the selection of a scalar field for use a the diameter. We can reuse part of our SelectPanels for this, allowing users to also scale and clamp the sample-values. We also need a method to allow users to place the seed-points. For this we could consider a two-step technique where a user first clicks somewhere inside the visualization window to place a seed-point, upon which a seed point is placed and marked. Next the user can use the mousewheel to change the depth of the seed point.
 
-		For the actual implementation of the stream tubes the most challenging part will be the actual construction of the stream tube's geometry. Obtaining the 3-dimensional dataset is fairly easy as it simply involves keeping the last $N$ datasets arrays, which can simply be achieved by placing the current dataset arrays in an encompassing array, and generating new dataset arrays and deleting the oldest dataset arrays every frame. From here on tracing a stream line should be possible be using a similar technique as in step 5b, but in 3-dimensions. It might be possible to construct and output the geometry for the stream tube as the stream line is traced.p
+		For the actual implementation of the stream tubes the most challenging part will be the actual construction of the stream tube's geometry. Obtaining the 3-dimensional dataset is fairly easy as it simply involves keeping the last $N$ datasets arrays, which can simply be achieved by placing the current dataset arrays in an encompassing array, and generating new dataset arrays and deleting the oldest dataset arrays every frame. From here on tracing a stream line should be possible be using a similar technique as in step 5b, but in 3-dimensions. It might be possible to construct and output the geometry for the stream tube as the stream line is traced.
 
 		Finally we need to look at where exactly in the current visualization we will place the stream tubes, as they might interfere with the heightplot. One solution might be to force the user to choose between either a heightplot or stream tubes.
 \chapter{Evaluation}
     This assignment was meant to ``Construct an interactive application that implements several visualization techniques for a real-time simulation of fluid flow''. Up to this point, we have been able to finish the biggest part of the assignment. We have implemented all the required parts of the assignment except stream tubes.
-    
+
     This was an interesting assignment. We have been implementing several interesting graphical features, such as isolines an height plots. Because we decided to use Java as programming language, it was important to keep an eye on the performance of our program. Although stream tubes will probably slow our visualization a lot, we have been able to have a reasonable performance until now.
-    
+
     We think we have succeeded in creating a useful real-time smoke visualization program. Of course there is still a lot room for improvement, but the most main aspects of the assignment have been fulfilled.
-    
+
 \bibliographystyle{amsplain}
 \begin{thebibliography}{99}
 \bibitem{kcilst} Keenan~Crane, Ignacio~Llamas and Sarah~Tariq.\\
