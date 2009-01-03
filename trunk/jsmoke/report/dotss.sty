@@ -1,0 +1,166 @@
+% Version 0.1.0
+% 31 January 2008
+\ProvidesPackage{dotss}
+
+% Packages
+\usepackage{a4wide}                   % Tell latex to use the room there is on the page
+\usepackage{amsmath}                  % For equation environment
+\usepackage[british]{babel}           % Use british hyphenation stuff
+\usepackage{fancyhdr}                 % Nice and shiny headers
+\usepackage{graphicx}                 % For images
+\usepackage[usenames]{color}          % For coloring text
+\usepackage{listings}
+% Make links clickable and generate bookmarks (so you can easily click through in acroread)
+\usepackage[pagebackref=true,
+            breaklinks=true,
+            colorlinks=false,
+            pdfborder={0 0 0},
+            bookmarks=true
+           ]{hyperref}
+\usepackage{lineno}                   % Include line numbers
+\usepackage{longtable}                % Make tables that can cover multiple pages
+\usepackage[section]{placeins}        % Prevent floats from passing beyond \FloatBarrier; keep floats within their sections
+\usepackage{url}                      % Make it possible to define clickable urls
+\usepackage{verbatim}                 % Make it possible to comment out big blocks with \begin{comment}, \end{comment}
+
+% Introduce command \todo. This will print the argument in the margin
+\setlength{\marginparwidth}{2.3cm}
+\newcommand\todo[1]{
+  \-\marginpar[\raggedleft\footnotesize #1]
+  {
+    \raggedright\footnotesize #1
+  }
+}
+
+% Define some convenience commands
+\newcommand{\name}[1]{\textsc{#1}}
+\newcommand{\projectteam}{}
+\newcommand{\projectname}{}
+\newcommand{\activepython}{\name{ActivePython}}
+\newcommand{\ahref}[1]{\htmladdnormallink{#1}{#1}}
+\definecolor{TUEBlue}{rgb}{0.0627451,0.0627451,0.45098}
+\definecolor{TUERed}{rgb}{0.839216,0.0,0.290196}
+\definecolor{TUTUTUOrange}{rgb}{0.917647,0.47451,0.0980392}
+\newcommand{\TUE}{{\fontfamily{phv}\selectfont \textcolor{TUEBlue}{TU\textcolor{TUERed}{/}e}}}
+\newcommand{\TUTUTU}{{\fontfamily{phv}\selectfont \textcolor{TUTUTUOrange}{\textbf{3TU}}/SAI}}
+\newcommand{\scheiding}{\noindent \rule{\textwidth}{1.0pt} \vspace{-30.0pt}} %scheidingslijn voor overzichtelijkheid
+\newcommand{\classnamesection}[1]{\scheiding \subsubsection{#1}}
+
+% Define the headers we will use
+\pagestyle{fancy}
+\fancyhf{}
+%\fancyhead[LE,RO]{\slshape \rightmark}
+\fancyhead[LO,RE]{\slshape \leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% Headers for the pages that start a chapter, also for the TOC
+\fancypagestyle{plain}{%
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.4pt}
+}
+
+% Line numbers every 5 lines
+% See dotsspreamble/dotssdocument
+\modulolinenumbers[5]
+
+% Define the dotss bibliography
+\newcommand{\dotssbibliography}{
+  \renewcommand{\bibname}{\vspace*{-100pt}}
+  \bibliographystyle{../dotss}
+  \bibliography{../bibliography}
+}
+
+% Define the front page
+\newcommand{\dotsstitlepage}{
+\begin{titlepage}
+\begin{center}
+\huge
+\doctitle \\
+\medskip
+\Large
+\coursename
+\medskip
+\medskip
+\medskip
+
+\hspace{\medskipamount} \docdate \\[24pt]
+
+
+\begin{tabular}{lll}
+Dani\"el Geelen       & 0575435 \\
+Maarten Manders       & 0573419 \\
+\end{tabular}\\[24pt]
+
+Computer Science, Eindhoven University of Technology, Eindhoven
+\end{center}
+\end{titlepage}
+}
+
+\newcommand{\dotsspreamble}{
+\nolinenumbers
+\dotsstitlepage
+\pagenumbering{roman}
+}
+
+\newcommand{\dotssdocument}{
+% Enable linenumbering
+\newpage
+\linenumbers
+\pagenumbering{arabic}
+}
+
+\newdimen\bibindent
+\setlength\bibindent{1.5em}
+\newdimen\bibspacing
+\setlength\bibspacing\z@
+\renewenvironment{thebibliography}[1]{%
+  \section{List of references}%
+      \list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \itemsep\z@skip    % should this be commented out?
+            \parsep\z@skip     % should this be commented out?
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy\clubpenalty4000\widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+
+
+% Source code
+\definecolor{cred}{rgb}{0.6,0,0}
+\definecolor{cgreen}{rgb}{0,0.6,0}
+\definecolor{corange}{rgb}{0.2,0.2,0.2}
+\definecolor{cblue}{rgb}{0,0,0.6}
+\definecolor{cgray}{rgb}{0.8,0.8,0.8}
+
+
+\lstdefinestyle{PHP}{
+	otherkeywords={+,-,>,[,],\{,\},!,=,(,;,)},
+	keywordstyle=\color{cgreen},
+	stringstyle=\color{cred},
+	commentstyle=\color{corange},
+	identifierstyle=\color{cblue},
+	moreemph={[3])},
+	emphstyle={[3]\color{cgreen}}
+}
+
+\lstset{
+	numbers=left,
+	numberstyle=\tiny\sffamily\color{black},
+	numbersep=2mm,
+	backgroundcolor=\color{cgray},
+	basicstyle=\footnotesize\ttfamily,
+	linewidth=\textwidth,
+	breaklines=true,
+	xleftmargin=5mm,
+	columns=fixed
+}
