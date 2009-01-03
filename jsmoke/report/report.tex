@@ -15,6 +15,7 @@
 
 \newcommand{\imagescalefactor}{0.40}
 \newcommand{\cref}[1]{chapter \ref{#1}}
+\newcommand{\TODO}[1]{\textsc{\textbf{TODO: #1}}}
 
 % \dotsspreamble
 
@@ -70,13 +71,18 @@
 % 		\caption{The first gui elements.}\label{fig:step2}
 % 		\end{figure}
 % 		\newpage
-	\section{Glyphs}
-		\begin{figure}[h]
-		\centering
-		\includegraphics[scale=\imagescalefactor]{images/step3.png}
-		\caption{Adding glyphs.}\label{fig:step3}
-		\end{figure}
-		\newpage
+% 	\section{Glyphs}
+% 		Next we implemented glyphs. As can be seen in the screenshot there are now three separate option panels. One panel can be used to set general options for the simulation (such as the size of the simulation grid, speed of simulation, etc.), one to set options for the `smoke', and one for the glyphs (vectors). The Vector panel in this screenshot is a specialisation of the Smoke panel. The glyphs can be colored on any of the available datasets in the same way as the smoke.
+%
+% 		Also it is possibly to choose a different vector-field to align the glyphs with, and a different shape for the glyphs. The glyphs scale with the average magnitude of the sample-values around the glyph. This scaling can be influenced with the scale-factor to increase or decrease the sensitivity of the glyph scaling to the sample-values. The number of glyphs in the X- and Y-direction can also be set. A notable feature that we have implemented is that glyphs use the average sample values around them instead of just a single point value. This means that when there are significantly less glyphs than grid points glyphs will more more naturally with the flow (they respond to a larger area of the fluid-simulation, an area approximately the size of the glyph it self).
+% 		Lastly it is also possible to select a different shape for the glyph, in the screenshot you can see the default `arrow' shape.
+% 		\TODO{Andere shapes ook noemen? Welke 3D doen we dan?}
+% 		\begin{figure}[h]
+% 		\centering
+% 		\includegraphics[scale=\imagescalefactor]{images/step3.png}
+% 		\caption{Adding glyphs.}\label{fig:step3}
+% 		\end{figure}
+% 		\newpage
 	\section{Divergence}
 		\begin{figure}[h]
 		\centering
