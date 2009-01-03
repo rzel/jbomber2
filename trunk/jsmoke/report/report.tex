@@ -63,7 +63,7 @@
 		\includegraphics[scale=1.0]{images/architecture.png}
 		\caption{The basic architecture of our program.}\label{fig:architecture}
 		\end{figure}
-
+		\clearpage
 	\section{Skeleton compilation}
 		This step does not really warrant much discussion. The only reasons to include it in our discussion here is to show what the program looked like when we first used it, and to point out one problem that we encountered at this point. The problems lies in an (in our opinion) flaw in the given source code, which uses an GLJPanel. The problem is that a GLJPanel is very slow, giving low framerates under Windows, and unacceptable framerates  under Linux. The solution we used was to simply replace the GLJPanel with a GLCanvas which is much faster. One problem with this approach was pointed out by dr.ir. H. van de Wetering which is that when embedding a GLCanvas in other Swing controls there may be some problems with the drawing of the visualization. However since we placed the Swing gui-elements next to the visualization windows we did not have any problems.
 		\begin{figure}[h]
@@ -107,9 +107,9 @@
 		\clearpage
 	\section{Divergence}
         In the next stage of the assignment we implemented the possibility to view the divergence of $|v|$ and $|f|$. This was relatively easy, because the mechanism to select $div~v$ and $div~f$ had to be added in only one component of our program. The implementation of the value of these divergences on a grid point in our simulation was a little bit more complicated.
-        
+
         The divergence $div~v$ is given by $div~v = \nabla \cdot v = \frac{\partial v_x}{\partial x} + \frac{\partial v_y}{\partial y}$ and the divergence of $|f|$ is $div~f = \nabla \cdot f = \frac{\partial f_x}{\partial x} + \frac{\partial f_y}{\partial y}$. To implement this, we had to determine the partial derivatives of $|f|$ and $|v|$. We have chosen to implement this by summing the values of respectively the data sets $|f|$ and $|v|$ around a grid point and take the mean of these sums.
-        
+
         So put together in a formula, where $x$ and $y$ denote the coordinates of the grid points to determine $div~f$ or $div~v$: $div^*~v = \frac{1}{2}((v_{x-1,y} - v_{x+1,y}) + (v_{x,y-1} - v_{x,y+1}))$ and $div^*~f = \frac{1}{2}((f_{x-1,y} - f_{x+1,y}) + (f_{x,y-1} - f_{x,y+1}))$. Here $f_{x,y}$ and $v_{x,y}$ depict the values of respectively $f$ and $v$ on grid point $(x,y)$.   An example of the visualization of the divergence of $|v|$ is shown in Figure \ref{fig:step4}.
 		\begin{figure}[h]
 		\centering
@@ -119,6 +119,10 @@
 		\clearpage
 	\section{Isosurfaces (Isolines)}
         In this stage we had to implement the isoline technique. This part of the assignment consisted of two separate parts: adding functionality to place an isoline for one value of $\rho$, namely $\rho_0$ and placing a number of isolines between two values of $\rho$, being $\rho_1$ and $\rho_2$. We have chosen to generalize this part of the assignment. In our simulation it is not only possible to draw isolines only on values of $\rho$, but also on $|v|, |f|, div~v$ and $div~f$.
+        
+        As can bee seen in Figure \ref{fig:step5} a new tab with properties for the isolines was added. Here (amongst color and data set options) $\rho_1$(Low) and $\rho_2$(High) and the number of iso lines that should be drawn between these two can be specified. If $\rho_1 = \rho_2$, only one iso line is drawn. In our visualization this is the way to select a $\rho_0$.
+        
+        Our isolines are constructed from a number of partial isolines. These partial isolines together form a closed isoline. We use a lookup table to determine how a partial isoline should be drawn.
 		\begin{figure}[h]
 		\centering
 		\includegraphics[scale=\imagescalefactor]{images/step5.png}
