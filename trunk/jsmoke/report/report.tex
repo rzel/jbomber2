@@ -46,15 +46,15 @@
 \chapter{Detailed description}\label{detaileddescription}
     \section{Architecture}
         This section describes the current architecture of our program. An overview of all the main components is given and the main functionality of each component is described. As can be seen in Figure \ref{fig:architecture}, our program consists of five main components.
-        
-        The \texttt{Smoke} class is the base class of the program, so the main functionality of this class is to visualize the simulated smoke. The simulation options, such as simulation speed, whether the smoke, vectors or iso lines should be drawn, are also implemented in this class. 
-        
+
+        The \texttt{Smoke} class is the base class of the program, so the main functionality of this class is to visualize the simulated smoke. The simulation options, such as simulation speed, whether the smoke, vectors or iso lines should be drawn, are also implemented in this class.
+
         The \texttt{ColormapSelectPanel} class contains the basic functionality that is used for all the color maps that are used in our program. A color map for each data set ($\rho, |f|, |v|, div~f$ and $div~v$) can be chosen. Also, the scaling and clamping of colors from color maps can be enabled using the functionality in this class, the number of colors used in a color map can be specified and an appropriate type of color map can be selected. This class offers functionality that is used in a number of other classes that are used to specify color maps for different parts of our program.
-        
+
         The \texttt{VectorOptionsSelectPanel} class enables the selection of a number of options of the vectors and glyphs that can be shown. Beside the functionality that was offered by the \texttt{ColormapSelectPanel} class, there are a number of other parameters that can be specified. The extended functionality consists of selecting the size of the vectors, the scale factor of the vectors and the number of grid points on which the vectors are drawn.
-        
+
         The \texttt{IsoLineSelectPanel} class is also a descendent of the \texttt{ColormapSelectPanel} class. Besides all the functionality of this class, the number of iso lines and the values between which the iso lines are drawn can be chosen.
-        
+
         The \texttt{HeightplotSelectPanel} class does not have all the functionality of the \texttt{ColormapSelectPanel} class. Selecting a color map was not useful here, so this functionality has been removed. However, shading and lighting options for the height map have been added.
 
 		\begin{figure}[h]
@@ -105,6 +105,11 @@
 		\end{figure}
 		\clearpage
 	\section{Divergence}
+        In the next stage of the assignment we implemented the possibility to view the divergence of $|v|$ and $|f|$. This was relatively easy, because the mechanism to select $div~v$ and $div~f$ had to be added in only one component of our program. The implementation of the value of these divergences on a grid point in our simulation was a little bit more complicated.
+        
+        The divergence $div~v$ is given by $div~v = \nabla \cdot v = \frac{\partial v_x}{\partial x} + \frac{\partial v_y}{\partial y}$ and the divergence of $|f|$ is $div~f = \nabla \cdot f = \frac{\partial f_x}{\partial x} + \frac{\partial f_y}{\partial y}$. To implement this, we had to determine the partial derivatives of $|f|$ and $|v|$. We have chosen to implement this by summing the values of respectively the data sets $|f|$ and $|v|$ around a grid point and take the mean of these sums.
+        
+        So put together in a formula, where $x$ and $y$ denote the coordinates of the grid points to determine $div~f$ or $div~v$: $div^*~v = \frac{1}{2}((v_{x-1,y} - v_{x+1,y}) + (v_{x,y-1} - v_{x,y+1}))$ and $div^*~f = \frac{1}{2}((f_{x-1,y} - f_{x+1,y}) + (f_{x,y-1} - f_{x,y+1}))$. Here $f_{x,y}$ and $v_{x,y}$ depict the values of respectively $f$ and $v$ on grid point $(x,y)$.   An example of the visualization of the divergence of $|v|$ is shown in Figure \ref{fig:step4}.
 		\begin{figure}[h]
 		\centering
 		\includegraphics[scale=\imagescalefactor]{images/step4.png}
