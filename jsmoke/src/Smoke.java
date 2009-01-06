@@ -54,8 +54,8 @@ class Smoke {
 	int   winWidth, winHeight;     //size of the graphics window, in pixels
 	int   color_dir = 0;           //use direction color-coding or not
 	float vec_scale = 1000;        //scaling of hedgehogs
-	boolean draw_smoke     = true;  //draw the smoke or not
-	boolean draw_vecs      = false;    //draw the vector field or not
+	boolean draw_smoke     = false;  //draw the smoke or not
+	boolean draw_vecs      = true;    //draw the vector field or not
 	boolean draw_iso_lines = false;    //draw the iso lines or not
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
@@ -897,11 +897,9 @@ class Smoke {
 		smokeSelectPanel.add(vectorButton);
 		smokeSelectPanel.add(isoLineButton);
 
-		smokeButton.setSelected(true);
-		vectorButton.setSelected(false);
-		draw_smoke = true;
-		draw_vecs = false;
-		draw_iso_lines = true;
+		smokeButton.setSelected(draw_smoke);
+		vectorButton.setSelected(draw_vecs);
+		isoLineButton.setSelected(draw_iso_lines);
 
 		smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));
 		smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
