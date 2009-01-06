@@ -509,7 +509,10 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
 		colortable.getColumnModel().getColumn(colortable.convertColumnIndexToView(0)).setHeaderValue("Colors");
 		colortable.doLayout();
-
+		
+		/****************************
+		 ** BEGIN Default gradient **
+		 ****************************/
 		TableColumnModel cm = colortable.getColumnModel();
 		ColorTableRenderer r = new ColorTableRenderer();
 		TableColumn c = cm.getColumn(0);
@@ -523,7 +526,9 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		tablemodelcolors.addRow(o);
 		o[0] = new Color(255, 0, 255);
 		tablemodelcolors.addRow(o);
-
+//		o[0] = new Color(255, 255, 255);
+//		tablemodelcolors.addRow(o);
+		
 // 		for(int i=0; i < 512; ++i) {
 // 			o[0] = new Color(0, 0, 0);
 // 			tablemodelcolors.addRow(o);
@@ -541,6 +546,9 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 
 		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 		generate_custom_gradient_cache();
+		/**************************
+		 ** END Default gradient **
+		 **************************/
 
 		JScrollPane scroll  = new JScrollPane(colortable);
 		JPanel panel = new JPanel();
