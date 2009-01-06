@@ -240,8 +240,9 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			if (row >= 0 && column >= 0) {
 				colortable.setValueAt(e.getSource(), row, column);
 			}
-			generate_custom_gradient_cache();
+			generate_custom_gradient_cache();			
 		}
+		colorPreviewSlider.repaint();
 	}
 
         private JPanel initDatasetSelectPanel() {
@@ -526,8 +527,6 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		tablemodelcolors.addRow(o);
 		o[0] = new Color(255, 0, 255);
 		tablemodelcolors.addRow(o);
-//		o[0] = new Color(255, 255, 255);
-//		tablemodelcolors.addRow(o);
 		
 // 		for(int i=0; i < 512; ++i) {
 // 			o[0] = new Color(0, 0, 0);
@@ -544,8 +543,9 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 // 			tablemodelcolors.addRow(o);
 // 		}
 
-		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
+		colorCountSlider.setMinimum(colortable.getRowCount());
 		generate_custom_gradient_cache();
+		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 		/**************************
 		 ** END Default gradient **
 		 **************************/
