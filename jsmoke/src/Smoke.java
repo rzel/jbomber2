@@ -459,11 +459,7 @@ class Smoke {
 
 
 		if (heightplotSelectPanel.isShadingEnabled()) {
-				gl.glEnable(gl.GL_LIGHTING);
-		}
-		boolean SomethingChangedInTheLightingModel = heightplotSelectPanel.getSomethingChangedInTheLightingModel();
-
-		if(SomethingChangedInTheLightingModel) {
+			gl.glEnable(gl.GL_LIGHTING);
 			heightplotSelectPanel.setSomethingChangedInTheLightingModel(false);
 			float[] fLightAmbient  = heightplotSelectPanel.getLightAmbientColor();
 			float[] fLightDiffuse  = heightplotSelectPanel.getLightDiffuseColor();
@@ -487,6 +483,9 @@ class Smoke {
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightDiffuse);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR,  LightSpecular);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition);
+		}
+		else {
+			gl.glDisable(gl.GL_LIGHTING);
 		}
 
 		gl.glTranslated(winWidth/2.0, 0.0, 0.0);
@@ -626,91 +625,7 @@ class Smoke {
 		}
 
 		if (draw_vecs) {
-			double[] vfx, vfy;
-			
-			if (vectorOptionSelectPanel.getVectorField() == VectorOptionSelectPanel.VECTOR_FIELD_FORCE) {
-			    vfx = fx;
-			    vfy = fy;
-			}
-			else {
-			    vfx = vx;
-			    vfy = vy;
-			}
-		    
-			if (vector_type == VECTOR_TYPE_HEDGEHOG) { // Fixme: These are currently b0rken
-				gl.glBegin(GL.GL_LINES);				//draw velocities
-				for (i = 0; i < DIM; i++)
-					for (j = 0; j < DIM; j++) {
-						idx = (j * DIM) + i;
-						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
-						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
-						z = getDatasetColor(idx, heightplotSelectPanel);
-						gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
-						gl.glVertex3d(wn + i * wn, hn + j * hn, z * zscale);
-						gl.glVertex3d((wn + i * wn) + vec_scale * vfx[idx], (hn + j * hn) + vec_scale * vfy[idx], z * zscale);
-					}
-				gl.glEnd();
-			} else if (vector_type == VECTOR_TYPE_ARROW) {
-				gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
-				gl.glDisable(gl.GL_TEXTURE_1D);
-				gl.glEnable(gl.GL_TEXTURE_2D);
-				gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_2]);
-				gl.glEnable(gl.GL_BLEND);
-				float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
-				float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
-				int gridx = vectorOptionSelectPanel.getVectorGridX();
-				int gridy = vectorOptionSelectPanel.getVectorGridY();
-				float spacex = (float)((winWidth  - 2 * wn) / (gridx + 0.0f));
-				float spacey = (float)((winHeight - 2 * hn) / (gridy + 0.0f));
-				gl.glPushMatrix();
-				gl.glTranslatef(winWidth / 2.0f, winHeight / 2.0f, 0);
-				double maxveclen = vectorOptionSelectPanel.get_longest_vector();
-				double maxveclenx = 0.99 * (winWidth / gridx);
-				double maxvecleny = 0.99 * (winHeight / gridy);
-				double vecscalefact = Math.min(maxveclenx, maxvecleny);
-				double vec_clip_hack  = 128.0 / zscale; // Magix
-				for (int x = 0 ; x < gridx ; ++x) {
-					for (int y = 0 ; y < gridy ; ++y) {
-						idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
-						double[] result = sampleDataset(x, y, vectorOptionSelectPanel, vectorOptionSelectPanel.getVectorGridX(), vectorOptionSelectPanel.getVectorGridY());
-						vectorOptionSelectPanel.update_longest_vector(result[2]);
-						double inprod = result[1]/result[2];
-						double xdir   = result[0]/Math.abs(result[0]);
-						double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;
-						double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
-						if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
-							size = 0.5 * (result[2] / maxveclen) * (vecscalefact * vector_scalefactor) + vector_size;
-						}
-// 						size = 0.5 * vecscalefact;
-						float[] color = vectorOptionSelectPanel.getGradientColor(result[3]);
-
-						result = sampleDataset(x, y, heightplotSelectPanel, vectorOptionSelectPanel.getVectorGridX(), vectorOptionSelectPanel.getVectorGridY());
-
-						gl.glColor3f(color[0], color[1], color[2]);
-							gl.glPushMatrix();
-						gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
-						                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
-						                0.0f);
-						gl.glRotatef((float)rotation, 0, 0, 1);
-						gl.glBegin(GL.GL_QUADS); // Can not be moved outside of for-loop because of glTranslatef and glRotatef
-						gl.glTexCoord2d(1.0, 0.0);
-						gl.glVertex3d( - size, - size, result[4] * zscale + vec_clip_hack);
-
-						gl.glTexCoord2d(0.0, 0.0);
-						gl.glVertex3d( + size, - size, result[4] * zscale + vec_clip_hack);
-
-						gl.glTexCoord2d(0.0, 1.0);
-						gl.glVertex3d( + size, + size, result[4] * zscale + vec_clip_hack);
-
-						gl.glTexCoord2d(1.0, 1.0);
-						gl.glVertex3d( - size, + size, result[4] * zscale + vec_clip_hack);
-						gl.glEnd();
-
-						gl.glPopMatrix();
-					}
-				}
-				gl.glPopMatrix();
-			}
+			draw_vector_grid(gl, zscale, wn, hn);
 		}
 
 		gl.glFlush(); // forces all opengl commands to complete. Blocking!!
@@ -736,6 +651,136 @@ class Smoke {
 		heightplotSelectPanel.reset_mindataset_value();
 		heightplotSelectPanel.reset_maxdataset_value();
 	}
+
+
+// 			if (vector_type == VECTOR_TYPE_HEDGEHOG) { // Fixme: These are currently b0rken
+// 				gl.glBegin(GL.GL_LINES);				//draw velocities
+// 				for (i = 0; i < DIM; i++)
+// 					for (j = 0; j < DIM; j++) {
+// 						idx = (j * DIM) + i;
+// 						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
+// 						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
+// 						z = getDatasetColor(idx, heightplotSelectPanel);
+// 						gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
+// 						gl.glVertex3d(wn + i * wn, hn + j * hn, z * zscale);
+// 						gl.glVertex3d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx], z * zscale);
+// 					}
+// 				gl.glEnd();
+// 			} else if (vector_type == VECTOR_TYPE_ARROW) {
+
+	void draw_vector(GL gl) {
+		if(vectorOptionSelectPanel.getVectorType() == vectorOptionSelectPanel.VT_HEDGEHOGS) { /* type == 1d */
+			gl.glBegin(GL.GL_LINES);
+			gl.glVertex2d(0,0);
+			gl.glVertex2d(0,-1);
+			gl.glEnd();
+		}
+		else if(vectorOptionSelectPanel.getVectorType() < vectorOptionSelectPanel.VT_PYRAMID) { /* type == 2d */
+			gl.glBegin(gl.GL_QUADS);
+			gl.glTexCoord2d(1.0, 0.0);
+			gl.glVertex2d( - 1, - 1);
+
+			gl.glTexCoord2d(0.0, 0.0);
+			gl.glVertex2d( + 1, - 1);
+
+			gl.glTexCoord2d(0.0, 1.0);
+			gl.glVertex2d( + 1, + 1);
+
+			gl.glTexCoord2d(1.0, 1.0);
+			gl.glVertex2d( - 1, + 1);
+			gl.glEnd();
+		}
+		else { /* type == 3d */
+			gl.glEnable(gl.GL_LIGHTING);
+			gl.glBegin(gl.GL_TRIANGLE_FAN);
+			gl.glNormal3d(  0, -1,  0);
+			gl.glVertex3d(  0, -1,  0); // Top
+
+			gl.glNormal3d( -0.57735, 0.57735, -0.57735);
+			gl.glVertex3d( -1,  1, -1);
+
+			gl.glNormal3d( -0.57735, 0.57735, 0.57735);
+			gl.glVertex3d( -1,  1,  1);
+
+			gl.glNormal3d( 0.57735, 0.57735, 0.57735);
+			gl.glVertex3d(  1,  1,  1);
+
+			gl.glNormal3d( 0.57735, 0.57735, -0.57735);
+			gl.glVertex3d(  1,  1, -1);
+
+			gl.glNormal3d( -0.57735, 0.57735, -0.57735);
+			gl.glVertex3d( -1,  1, -1);
+			gl.glEnd();
+		}
+	}
+
+	void draw_vector_grid(GL gl, double zscale, double wn, double hn) { //note: some 'hack' params
+		gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL.GL_FILL);
+		gl.glDisable(gl.GL_TEXTURE_1D);
+		gl.glDisable(gl.GL_TEXTURE_2D);
+		gl.glDisable(gl.GL_BLEND);
+		gl.glDisable(gl.GL_LIGHTING);
+		if(vectorOptionSelectPanel.getVectorType() == vectorOptionSelectPanel.VT_HEDGEHOGS) { /* type == 1d */
+		}
+		else if(vectorOptionSelectPanel.getVectorType() < vectorOptionSelectPanel.VT_PYRAMID) { /* type == 2d */
+			gl.glEnable(gl.GL_TEXTURE_2D);
+			gl.glBindTexture(gl.GL_TEXTURE_2D, textures[TEXTURE_ARROW_1 + vectorOptionSelectPanel.getVectorType() - 1]);
+			gl.glEnable(gl.GL_BLEND);
+		}
+		else { /* type == 3d */
+			gl.glEnable(gl.GL_LIGHTING);
+		}
+
+		float vector_size  = 0.5f * vectorOptionSelectPanel.getVectorSize();
+		float vector_scalefactor = vectorOptionSelectPanel.getVectorScaleFactor();
+		int gridx = vectorOptionSelectPanel.getVectorGridX();
+		int gridy = vectorOptionSelectPanel.getVectorGridY();
+		float spacex = (float)((winWidth  - 2 * wn) / (gridx + 0.0f));
+		float spacey = (float)((winHeight - 2 * hn) / (gridy + 0.0f));
+		gl.glPushMatrix();
+		gl.glTranslatef(winWidth / 2.0f, winHeight / 2.0f, 0);
+		double maxveclen = vectorOptionSelectPanel.get_longest_vector();
+		double maxveclenx = 0.99 * (winWidth / gridx);
+		double maxvecleny = 0.99 * (winHeight / gridy);
+		double vecscalefact = Math.min(maxveclenx, maxvecleny);
+		double vec_clip_hack  = 128.0 / zscale; // Magix
+		for (int x = 0 ; x < gridx ; ++x) {
+			for (int y = 0 ; y < gridy ; ++y) {
+				int idx = (int)((x / (float)gridx) * DIM + DIM * (int)(DIM * (y / (float)gridy)));
+				double[] result = sampleDataset(x, y, vectorOptionSelectPanel, vectorOptionSelectPanel.getVectorGridX(), vectorOptionSelectPanel.getVectorGridY());
+				vectorOptionSelectPanel.update_longest_vector(result[2]);
+				double inprod = result[1]/result[2];
+				double xdir   = result[0]/Math.abs(result[0]);
+				double rotation = (-xdir)*(Math.acos(inprod)/Math.PI*180)+180;
+				double size = 0.5 * (vector_size * vector_scalefactor * Math.sqrt(result[2]));
+				if((vectorOptionSelectPanel.getScalemode() & vectorOptionSelectPanel.SCALE_SCALE) != 0) {
+					size = 0.5 * (result[2] / maxveclen) * (vecscalefact * vector_scalefactor) + vector_size;
+				}
+// 				size = 0.5 * vecscalefact;
+				float[] color = vectorOptionSelectPanel.getGradientColor(result[3]);
+
+				result = sampleDataset(x, y, heightplotSelectPanel, vectorOptionSelectPanel.getVectorGridX(), vectorOptionSelectPanel.getVectorGridY());
+
+				gl.glColor3f(color[0], color[1], color[2]);
+				gl.glPushMatrix();
+				gl.glTranslatef((float)(spacex*0.5f + spacex * x - winWidth  * 0.5f + wn),
+				                (float)(spacey*0.5f + spacey * y - winHeight * 0.5f + hn),
+				                (float)(result[4] * zscale + vec_clip_hack));
+				gl.glRotatef((float)rotation, 0, 0, 1);
+				gl.glScaled(size, size, size);
+				draw_vector(gl);
+				if(vectorOptionSelectPanel.getVectorType()==VectorOptionSelectPanel.VT_PYRAMID) {
+					float[] fLightColor = {color[0], color[1], color[2], 1.0f};
+					FloatBuffer LightColor = FloatBuffer.wrap(fLightColor);
+					gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightColor);
+					gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightColor);
+				}
+				gl.glPopMatrix();
+			}
+		}
+		gl.glPopMatrix();
+	}
+
 	static long avg_begin      = 0;
 	static long avg_begin_prev = 0;
 	static long avg_fc         = 0;
