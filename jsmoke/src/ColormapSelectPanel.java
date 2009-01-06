@@ -177,6 +177,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 			colormap = COLOR_RAINBOW;
 			colorPreviewSlider.setColors(colors, colorCount);
+			generate_custom_gradient_cache();
 		} else if (e.getActionCommand().equals("SET_GRAYSCALE")) {
 			float[][] colors = new float[2048][3];
 
@@ -185,6 +186,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 			colormap = COLOR_GRAYSCALE;
 			colorPreviewSlider.setColors(colors, colorCount);
+			generate_custom_gradient_cache();
 		} else if (e.getActionCommand().equals("SET_DEFINED")) {
 			float[][] colors = new float[2048][3];
 			final int NLEVELS = 7;
@@ -196,9 +198,11 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 			colormap = COLOR_DEFINED;
 			colorPreviewSlider.setColors(colors, colorCount);
+			generate_custom_gradient_cache();
 		} else if (e.getActionCommand().equals("SET_CUSTOM")) {
 			colormap = COLOR_CUSTOM;
 			colorPreviewSlider.setColors(custom_gradient_cache, colorCount);
+			generate_custom_gradient_cache();
 		} else if (e.getActionCommand().equals("COLORTABLE_PICK_COLOR")) {
 			int row = colortable.getSelectedRow();
 			int column = colortable.getSelectedColumn();
@@ -298,10 +302,6 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		scaleButton.setSelected(true);
 		scaleButton.addActionListener(this);
 
-		colorCountLabel = new JLabel("Limit colors to 2047");
-		colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 2047, 2047);
-		colorCountSlider.addChangeListener(this);
-
 		JPanel clampSelectPanel = new JPanel();
 		clampSelectPanel.setLayout(new GridLayout(3, 2));
 		clampSelectPanel.add(clampButton);
@@ -322,10 +322,8 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		scaleSelectPanel.setBorder(new TitledBorder("Scaling:"));
 		scaleSelectPanel.add(scaleButton);
 		scaleSelectPanel.add(clampSelectPanel);
-		scaleSelectPanel.add(colorCountLabel);
-		scaleSelectPanel.add(colorCountSlider);
 
-                SpringUtilities.makeCompactGrid(scaleSelectPanel, 4, 1,  // rows, cols
+                SpringUtilities.makeCompactGrid(scaleSelectPanel, 2, 1,  // rows, cols
 		                                                  6, 6,  // initX, initY
 		                                                  6, 6); // xPad, yPad                
 		return scaleSelectPanel;
@@ -346,7 +344,12 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 	}
 
 	private JPanel initColormapSelectPanel(JFrame frame) {
+		
 		// Initialize colormap selection
+		colorCountLabel = new JLabel("Limit colors to 2047");
+		colorCountSlider = new JSlider(JSlider.HORIZONTAL, 1, 2047, 2047);
+		colorCountSlider.addChangeListener(this);  
+	    
 		JRadioButton rainbowButton = new JRadioButton("Rainbow");
 		rainbowButton.addActionListener(this);
 		rainbowButton.setActionCommand("SET_RAINBOW");
@@ -369,7 +372,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		colorMapSelectGroup.add(grayscaleButton);
 		colorMapSelectGroup.add(definedButton);
 		colorMapSelectGroup.add(customButton);
-
+		
 		rainbowButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		grayscaleButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		definedButton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -378,7 +381,9 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		JPanel colormapSelectPanel = new JPanel();
 		colormapSelectPanel.setLayout(new BoxLayout(colormapSelectPanel, BoxLayout.Y_AXIS));
 		colormapSelectPanel.setBorder(new TitledBorder("Colormaps"));
-
+	  	
+		colormapSelectPanel.add(colorCountLabel);
+		colormapSelectPanel.add(colorCountSlider);
 		colormapSelectPanel.add(rainbowButton);
 		colormapSelectPanel.add(grayscaleButton);
 		colormapSelectPanel.add(definedButton);
