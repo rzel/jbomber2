@@ -47,6 +47,13 @@ class Smoke {
 	double/*fftw_real*/ vx0[], vy0 [];        //(vx0,vy0) = velocity field at the previous moment
 	double/*fftw_real*/ fx [], fy  [];	//(fx,fy)   = user-controlled simulation forces, steered with the mouse
 	double/*fftw_real*/ rho[], rho0[];	//smoke density at the current (rho) and previous (rho0) moment
+	private static final int HISTORY_VX  = 0;
+	private static final int HISTORY_VY  = HISTORY_VX + 1;
+	private static final int HISTORY_FX  = HISTORY_VY + 1;
+	private static final int HISTORY_FY  = HISTORY_FX + 1;
+	private static final int HISTORY_RHO = HISTORY_FY + 1;
+	private static final int HISTORY_DEPTH = 512; // several sec? (fps dep hurray)
+	double[][][] simulation_history = new double[HISTORY_DEPTH/*nr of steps back in time, eg 0 equals current time*/][6/*index, eg FX or RHO*/][];
 	/*rfftwnd_plan*/ Pointer plan_rc, plan_cr;  //simulation domain discretization
 
 
@@ -56,7 +63,7 @@ class Smoke {
 	float vec_scale = 1000;        //scaling of hedgehogs
 	boolean draw_smoke     = true;  //draw the smoke or not
 	boolean draw_vecs      = false;    //draw the vector field or not
-	boolean draw_iso_lines = true;    //draw the iso lines or not
+	boolean draw_iso_lines = false;    //draw the iso lines or not
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
@@ -122,6 +129,14 @@ class Smoke {
 
 		for (int i = 0; i < dim; i++)               //Initialize data structures to 0
 			{ fx[i] = fy[i] = rho[i] = rho0[i] = 0.0; } // float or double??
+
+		for(int i = 0; i<HISTORY_DEPTH; ++i) {
+			simulation_history[i][HISTORY_VX] = new double[dim];
+			simulation_history[i][HISTORY_VY] = new double[dim];
+			simulation_history[i][HISTORY_FX] = new double[dim];
+			simulation_history[i][HISTORY_FY] = new double[dim];
+			simulation_history[i][HISTORY_RHO] = new double[dim];
+		}
 	}
 
 
@@ -244,8 +259,28 @@ class Smoke {
 		if (!frozen) {
 			set_forces();
 			solve(DIM, vx, vy, vx0, vy0, visc, dt);
-
 			diffuse_matter(DIM, vx, vy, rho, rho0, dt);
+
+			/* Update history */
+			for(int i = HISTORY_DEPTH-1; i>0; --i) {
+				simulation_history[i][HISTORY_VX] = simulation_history[i-1][HISTORY_VX];
+				simulation_history[i][HISTORY_VY] = simulation_history[i-1][HISTORY_VY];
+				simulation_history[i][HISTORY_FX] = simulation_history[i-1][HISTORY_FX];
+				simulation_history[i][HISTORY_FY] = simulation_history[i-1][HISTORY_FY];
+				simulation_history[i][HISTORY_RHO] = simulation_history[i-1][HISTORY_RHO];
+			}
+			int dim = DIM * 2 * (DIM / 2 + 1);
+			simulation_history[0][HISTORY_VX]  = new double[dim];
+			simulation_history[0][HISTORY_VY]  = new double[dim];
+			simulation_history[0][HISTORY_FX]  = new double[dim];
+			simulation_history[0][HISTORY_FY]  = new double[dim];
+			simulation_history[0][HISTORY_RHO] = new double[dim];
+			System.arraycopy(vx, 0, simulation_history[0][HISTORY_VX], 0, vx.length);
+			System.arraycopy(vy, 0, simulation_history[0][HISTORY_VY], 0, vy.length);
+			System.arraycopy(fx, 0, simulation_history[0][HISTORY_FX], 0, fx.length);
+			System.arraycopy(fy, 0, simulation_history[0][HISTORY_FY], 0, fy.length);
+			System.arraycopy(rho, 0, simulation_history[0][HISTORY_RHO], 0, rho.length);
+
 			panel.repaint(50);
 		}
 	}
@@ -288,6 +323,15 @@ class Smoke {
 	}
 
 	private float getDatasetColor(int idx, ColormapSelectPanel panel) {
+		return getDatasetColor(idx, panel, 0);
+	}
+
+	private float getDatasetColor(int idx, ColormapSelectPanel panel, int history_depth) {
+		double[] vx  = simulation_history[history_depth][HISTORY_VX];
+		double[] vy  = simulation_history[history_depth][HISTORY_VY];
+		double[] fx  = simulation_history[history_depth][HISTORY_FX];
+		double[] fy  = simulation_history[history_depth][HISTORY_FY];
+		double[] rho = simulation_history[history_depth][HISTORY_RHO];
 		float dataset_value = 0.0f;
 		switch (panel.getDataset()) {
 			case ColormapSelectPanel.DATASET_RHO:
@@ -627,6 +671,8 @@ class Smoke {
 			draw_vector_grid(gl, zscale, wn, hn);
 		}
 
+		trace_stream_tubes(gl, zscale, wn, hn);
+
 		gl.glFlush(); // forces all opengl commands to complete. Blocking!!
 		++avg_fc;
 		long current = System.nanoTime();
@@ -651,21 +697,70 @@ class Smoke {
 		heightplotSelectPanel.reset_maxdataset_value();
 	}
 
+	double[] sampleVectorDataset(double x, double y, int depth) {
+// 		int dimx = (x*DIM);
+// 		int dimy = (y*DIM);
+// 		int ix = (int)dimx;
+// 		int iy = (int)(y*DIM);
+		int ix = (int)x;
+		int iy = (int)y;;
+		double a,b,c,d;
+		double frac_x = /*dim*/x - ix;
+		double frac_y = /*dim*/y - iy;
+		double[] result = new double[2];
+		a = simulation_history[depth][HISTORY_VX][getIdxFromXY(ix + 0, iy + 0)];
+		b = simulation_history[depth][HISTORY_VX][getIdxFromXY(ix + 1, iy + 0)];
+		c = simulation_history[depth][HISTORY_VX][getIdxFromXY(ix + 0, iy + 1)];
+		d = simulation_history[depth][HISTORY_VX][getIdxFromXY(ix + 1, iy + 1)];
+		result[0] = (a*(1.0-frac_x)*(1.0-frac_y)) + (b*(frac_x)*(1.0-frac_y)) + (c*(1.0-frac_x)*(frac_y)) + (d*(frac_x)*(frac_y));
+		a = simulation_history[depth][HISTORY_VY][getIdxFromXY(ix + 0, iy + 0)];
+		b = simulation_history[depth][HISTORY_VY][getIdxFromXY(ix + 1, iy + 0)];
+		c = simulation_history[depth][HISTORY_VY][getIdxFromXY(ix + 0, iy + 1)];
+		d = simulation_history[depth][HISTORY_VY][getIdxFromXY(ix + 1, iy + 1)];
+		result[1] = (a*(1.0-frac_x)*(1.0-frac_y)) + (b*(frac_x)*(1.0-frac_y)) + (c*(1.0-frac_x)*(frac_y)) + (d*(frac_x)*(frac_y));
 
-// 			if (vector_type == VECTOR_TYPE_HEDGEHOG) { // Fixme: These are currently b0rken
-// 				gl.glBegin(GL.GL_LINES);				//draw velocities
-// 				for (i = 0; i < DIM; i++)
-// 					for (j = 0; j < DIM; j++) {
-// 						idx = (j * DIM) + i;
-// 						//direction_to_color(gl, (float)(double)vx[idx],(float)(double)vy[idx],color_dir);
-// 						//set_colormap(gl, getDatasetColor(idx, vectorOptionSelectPanel), vectorOptionSelectPanel);
-// 						z = getDatasetColor(idx, heightplotSelectPanel);
-// 						gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
-// 						gl.glVertex3d(wn + i * wn, hn + j * hn, z * zscale);
-// 						gl.glVertex3d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx], z * zscale);
-// 					}
-// 				gl.glEnd();
-// 			} else if (vector_type == VECTOR_TYPE_ARROW) {
+// 		if(x-y < 0.01)
+// 		System.out.println((simulation_history[15][HISTORY_VY][DIM/2+DIM*(DIM/2)]-simulation_history[430][HISTORY_VY][DIM/2+DIM*(DIM/2)]));
+
+		return result;
+	}
+
+	double[] normalize_vector(double[] vec) {
+		double length = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1]);
+		return new double[]{vec[0]/length, vec[1]/length};
+	}
+
+	void trace_stream_tubes(GL gl, double zscale, double wn, double hn) {
+		gl.glEnable(gl.GL_LIGHTING);
+		float[] fLightColor = {0.0f, 1.0f, 0.0f, 1.0f};
+		FloatBuffer LightColor = FloatBuffer.wrap(fLightColor);
+		gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightColor);
+		gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightColor);
+		gl.glColor3d(0.0, 1.0, 0.0);
+		for(double iy = DIM/8.0; iy < DIM; iy+=DIM/4.0) {
+			for(double ix = DIM/8.0; ix < DIM; ix+=DIM/4.0) {
+				double x = ix, y = iy; // Initial seed point
+				double z = 0;
+				double travelling_distance = .25;
+				gl.glBegin(gl.GL_LINES);
+				for(int depth = 0; depth < HISTORY_DEPTH; ++depth) {
+					double[] v = sampleVectorDataset(x,y,depth);
+					double[] vector = sampleVectorDataset(x,y,depth);//;normalize_vector(sampleVectorDataset(x,y,depth));
+					vector = normalize_vector(vector);
+					gl.glVertex3d(wn + x*wn, hn + y*hn, z);
+					x = x - vector[0] * travelling_distance;
+					y = y - vector[1] * travelling_distance;
+					z = z + (zscale*0.1)/(HISTORY_DEPTH/32.0);
+					gl.glVertex3d(wn + x*wn, hn + y*hn, z);
+
+					if( (x<0) || (x>DIM) || (y<0) || (y>DIM))
+						break;
+				}
+				gl.glEnd();
+			}
+		}
+		return;
+	}
 
 	void draw_vector(GL gl) {
 		if(vectorOptionSelectPanel.getVectorType() == vectorOptionSelectPanel.VT_HEDGEHOGS) { /* type == 1d */
