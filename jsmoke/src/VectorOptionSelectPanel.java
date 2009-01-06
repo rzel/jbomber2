@@ -10,6 +10,9 @@ import java.awt.color.*;
 import java.util.*;
 
 public class VectorOptionSelectPanel extends ColormapSelectPanel {
+	public static final int VECTOR_FIELD_FORCE = 42;
+	public static final int VECTOR_FIELD_VELOCITY = 21;
+    
 	private JSlider vector_size;
 	private JLabel  vector_size_label;
 	private JSlider vector_scale_factor;
@@ -20,12 +23,16 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 	private JLabel  vector_grid_y_label;
 	private double  longest_vector;
 	private double  longest_vector_last;
+	
+	private JRadioButton forceButton = new JRadioButton("Force field (f)", true);
+	private JRadioButton velocityButton = new JRadioButton("Fluid velocity (v)", false);
+	
 	public VectorOptionSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
 		super(minColor, maxColor, colorCount, colormap, frame);
 
 		longest_vector = 0.0;
 		longest_vector_last = 1.0;
-
+		
 		JPanel optionPanel = new JPanel();
 		optionPanel.setBorder(new TitledBorder("Vector Options"));
 		optionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -61,7 +68,12 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		 ** END Default gradient **
 		 **************************/
 
-
+		ButtonGroup vectorGroup = new ButtonGroup();	
+		vectorGroup.add(forceButton);
+		vectorGroup.add(velocityButton);
+		optionPanel.add(forceButton);
+		optionPanel.add(velocityButton);
+		
 		vector_size_label = new JLabel("Size [" + getVectorSize() + "]:");
 		optionPanel.add(vector_size_label);
 		optionPanel.add(vector_size);
@@ -77,13 +89,22 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		vector_grid_y_label = new JLabel("Grid Y [" + getVectorGridY() + "]:");
 		optionPanel.add(vector_grid_y_label);
 		optionPanel.add(vector_grid_y);
-		SpringUtilities.makeCompactGrid(optionPanel, 4, 2,  // rows, cols
+		SpringUtilities.makeCompactGrid(optionPanel, 5, 2,  // rows, cols
 		                                6, 6,  // initX, initY
 		                                6, 6); // xPad, yPad
 
 		add(optionPanel);
 	}
 
+	public int getVectorField() {
+	    if (forceButton.getModel().isSelected()) {
+		return VECTOR_FIELD_FORCE;
+	    }
+	    else {
+		return VECTOR_FIELD_VELOCITY;
+	    }
+	}
+	
 	public void update_longest_vector(double v) {
 		longest_vector = v > longest_vector ? v : longest_vector;
 	}

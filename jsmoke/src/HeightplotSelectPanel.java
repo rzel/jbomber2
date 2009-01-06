@@ -102,8 +102,8 @@ public class HeightplotSelectPanel extends ColormapSelectPanel  {
         shadingPanel.setBorder(new TitledBorder("Heightplot Options"));
         shadingPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         shadingPanel.setLayout(new SpringLayout());
-        
-        shadingPanel.add(shadingBox);
+	
+	shadingPanel.add(shadingBox);
         shadingPanel.add(new JLabel("Diffuse color: "));
         shadingPanel.add(diffuseButton);
         shadingPanel.add(new JLabel("Ambient color: "));

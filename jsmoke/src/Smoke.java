@@ -331,6 +331,18 @@ class Smoke {
 	}
 
 	private double[] sampleDataset(int x, int y, ColormapSelectPanel panel, double gridx, double gridy) {
+
+		double[] vfx, vfy;
+	    
+		if (vectorOptionSelectPanel.getVectorField() == VectorOptionSelectPanel.VECTOR_FIELD_FORCE) {
+		    vfx = fx;
+		    vfy = fy;
+		}
+		else {
+		    vfx = vx;
+		    vfy = vy;		    
+		}
+	    
 		// x and y here represent the (x,y) id of the grid-rectangle we're sampling
 // 		double gridx = vectorOptionSelectPanel.getVectorGridX();
 // 		double gridy = vectorOptionSelectPanel.getVectorGridY();
@@ -368,29 +380,29 @@ class Smoke {
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
 				double cell1s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
-				double cell1vx = vx[(int)(px)+(int)(py)*DIM];
-				double cell1vy = vy[(int)(px)+(int)(py)*DIM];
+				double cell1vx = vfx[(int)(px)+(int)(py)*DIM];
+				double cell1vy = vfy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
 				double cell2s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
-				double cell2vx = vx[(int)(px)+(int)(py)*DIM];
-				double cell2vy = vy[(int)(px)+(int)(py)*DIM];
+				double cell2vx = vfx[(int)(px)+(int)(py)*DIM];
+				double cell2vy = vfy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
 				double cell3s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
-				double cell3vx = vx[(int)(px)+(int)(py)*DIM];
-				double cell3vy = vy[(int)(px)+(int)(py)*DIM];
+				double cell3vx = vfx[(int)(px)+(int)(py)*DIM];
+				double cell3vy = vfy[(int)(px)+(int)(py)*DIM];
 				px = x_sample_centre_pos + sample_x + nearest_neighbour_x;
 				py = y_sample_centre_pos + sample_y + nearest_neighbour_y;
 				px = (px + DIM) % DIM;
 				py = (py + DIM) % DIM;
 				double cell4s  = getDatasetColor((int)(px)+(int)(py)*DIM, panel);
-				double cell4vx = vx[(int)(px)+(int)(py)*DIM];
-				double cell4vy = vy[(int)(px)+(int)(py)*DIM];
+				double cell4vx = vfx[(int)(px)+(int)(py)*DIM];
+				double cell4vy = vfy[(int)(px)+(int)(py)*DIM];
 				double cavg = (weight_sx * cell1s + weight_nnx * cell2s) * weight_sy + (weight_sx * cell3s + weight_nnx * cell4s) * weight_nny;
 				avgs += cavg;
 				avgx += (weight_sx * cell1vx + weight_nnx * cell2vx) * weight_sy + (weight_sx * cell3vx + weight_nnx * cell4vx) * weight_nny;
@@ -616,6 +628,17 @@ class Smoke {
 		}
 
 		if (draw_vecs) {
+			double[] vfx, vfy;
+			
+			if (vectorOptionSelectPanel.getVectorField() == VectorOptionSelectPanel.VECTOR_FIELD_FORCE) {
+			    vfx = fx;
+			    vfy = fy;
+			}
+			else {
+			    vfx = vx;
+			    vfy = vy;
+			}
+		    
 			if (vector_type == VECTOR_TYPE_HEDGEHOG) { // Fixme: These are currently b0rken
 				gl.glBegin(GL.GL_LINES);				//draw velocities
 				for (i = 0; i < DIM; i++)
@@ -626,7 +649,7 @@ class Smoke {
 						z = getDatasetColor(idx, heightplotSelectPanel);
 						gl.glTexCoord1d(z * texture_fill[TEXTURE_COLORMAP_SMOKE]);//FIXME: Needs own texture
 						gl.glVertex3d(wn + i * wn, hn + j * hn, z * zscale);
-						gl.glVertex3d((wn + i * wn) + vec_scale * vx[idx], (hn + j * hn) + vec_scale * vy[idx], z * zscale);
+						gl.glVertex3d((wn + i * wn) + vec_scale * vfx[idx], (hn + j * hn) + vec_scale * vfy[idx], z * zscale);
 					}
 				gl.glEnd();
 			} else if (vector_type == VECTOR_TYPE_ARROW) {
