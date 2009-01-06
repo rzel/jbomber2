@@ -9,10 +9,24 @@ import java.awt.color.*;
 
 import java.util.*;
 
-public class VectorOptionSelectPanel extends ColormapSelectPanel {
+public class VectorOptionSelectPanel extends ColormapSelectPanel implements ItemListener{
 	public static final int VECTOR_FIELD_FORCE = 42;
 	public static final int VECTOR_FIELD_VELOCITY = 21;
     
+	private static final String HEDGEHOGS = "1d: Hedgehogs";
+	private static final String ARROW     = "2d: Arrow";
+	private static final String ARROWTAIL = "2d: Arrow tail";
+	private static final String ARROWTOP  = "2d: Arrow top";
+	private static final String PACMAN    = "2d: Pacman";
+	private static final String PYRAMID   = "3d: Pyramid";	
+	
+	private static final int VT_HEDGEHOGS = 42;
+	private static final int VT_ARROW     = 84;
+	private static final int VT_ARROWTAIL = 126;
+	private static final int VT_ARROWTOP  = 168;
+	private static final int VT_PACMAN    = 210;
+	private static final int VT_PYRAMID   = 252;
+	
 	private JSlider vector_size;
 	private JLabel  vector_size_label;
 	private JSlider vector_scale_factor;
@@ -26,6 +40,10 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 	
 	private JRadioButton forceButton = new JRadioButton("Force field (f)", true);
 	private JRadioButton velocityButton = new JRadioButton("Fluid velocity (v)", false);
+	
+	private JComboBox shapeBox = new JComboBox();
+	
+	private int vectorType = VT_PACMAN;
 	
 	public VectorOptionSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
 		super(minColor, maxColor, colorCount, colormap, frame);
@@ -62,12 +80,22 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		tablemodelcolors.addRow(o);
 		o[0] = new Color(255, 0, 20);
 		tablemodelcolors.addRow(o);
+		colortable.changeSelection(colortable.getSelectedRow(), 0, false, false);
 		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 		generate_custom_gradient_cache();
 		/**************************
 		 ** END Default gradient **
 		 **************************/
 
+		shapeBox.addItem(HEDGEHOGS);
+		shapeBox.addItem(ARROW);
+		shapeBox.addItem(ARROWTAIL);
+		shapeBox.addItem(ARROWTOP);
+		shapeBox.addItem(PACMAN);
+		shapeBox.addItem(PYRAMID);
+		optionPanel.add(new JLabel("Vector shape:"));
+		optionPanel.add(shapeBox);		
+		
 		ButtonGroup vectorGroup = new ButtonGroup();	
 		vectorGroup.add(forceButton);
 		vectorGroup.add(velocityButton);
@@ -89,7 +117,7 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 		vector_grid_y_label = new JLabel("Grid Y [" + getVectorGridY() + "]:");
 		optionPanel.add(vector_grid_y_label);
 		optionPanel.add(vector_grid_y);
-		SpringUtilities.makeCompactGrid(optionPanel, 5, 2,  // rows, cols
+		SpringUtilities.makeCompactGrid(optionPanel, 6, 2,  // rows, cols
 		                                6, 6,  // initX, initY
 		                                6, 6); // xPad, yPad
 
@@ -139,7 +167,32 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel {
 	public int getVectorGridY() {
 		return vector_grid_y.getValue();
 	}
+	
+	public int getVectorType() {
+	    return vectorType;
+	}
 
+	public void itemStateChanged(ItemEvent e) {
+	    if (e.equals(HEDGEHOGS)) {
+		vectorType = VT_HEDGEHOGS;
+	    }
+	    else if (e.equals(ARROW)) {
+		vectorType = VT_ARROW;
+	    }
+	    else if (e.equals(ARROWTAIL)) {
+		vectorType = VT_ARROWTAIL;
+	    }
+	    else if (e.equals(ARROWTOP)) {
+		vectorType = VT_ARROWTOP;
+	    }
+	    else if (e.equals(PACMAN)) {
+		vectorType = VT_PACMAN;
+	    }
+	    else if (e.equals(PYRAMID)) {
+		vectorType = VT_PYRAMID;
+	    }
+	}
+	
 	class VectorOptionSelectPanelListener implements ChangeListener {
 		public void stateChanged(ChangeEvent e) {
 			if (e.getSource() == vector_size) {
