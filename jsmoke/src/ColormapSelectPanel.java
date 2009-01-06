@@ -216,7 +216,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 		} else if (e.getActionCommand().equals("COLORTABLE_REMOVE_COLOR")) {
 			int row = colortable.getSelectedRow();
 			((DefaultTableModel)(colortable.getModel())).removeRow(row);
-			colorCountSlider.setMinimum(colortable.getRowCount() - 1);
+			colorCountSlider.setMinimum(colortable.getRowCount() - 1);			
 			generate_custom_gradient_cache();
 		} else if (e.getActionCommand().equals("INTERPOLATE_RGB")) {
 			custom_gradient_interpolate_mode = INTERPOLATE_RGB;
@@ -489,6 +489,7 @@ public class ColormapSelectPanel extends JPanel implements ActionListener, Chang
 			}
 		}
 		update_gradient_texture = true;
+		colorPreviewSlider.repaint();
 	}
 
 	protected void setInterpolateMode(int i) {
