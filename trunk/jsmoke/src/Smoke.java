@@ -54,9 +54,9 @@ class Smoke {
 	int   winWidth, winHeight;     //size of the graphics window, in pixels
 	int   color_dir = 0;           //use direction color-coding or not
 	float vec_scale = 1000;        //scaling of hedgehogs
-	boolean draw_smoke     = false;  //draw the smoke or not
-	boolean draw_vecs      = true;    //draw the vector field or not
-	boolean draw_iso_lines = false;    //draw the iso lines or not
+	boolean draw_smoke     = true;  //draw the smoke or not
+	boolean draw_vecs      = false;    //draw the vector field or not
+	boolean draw_iso_lines = true;    //draw the iso lines or not
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
@@ -333,16 +333,16 @@ class Smoke {
 	private double[] sampleDataset(int x, int y, ColormapSelectPanel panel, double gridx, double gridy) {
 
 		double[] vfx, vfy;
-	    
+
 		if (vectorOptionSelectPanel.getVectorField() == VectorOptionSelectPanel.VECTOR_FIELD_FORCE) {
 		    vfx = fx;
 		    vfy = fy;
 		}
 		else {
 		    vfx = vx;
-		    vfy = vy;		    
+		    vfy = vy;
 		}
-	    
+
 		// x and y here represent the (x,y) id of the grid-rectangle we're sampling
 // 		double gridx = vectorOptionSelectPanel.getVectorGridX();
 // 		double gridy = vectorOptionSelectPanel.getVectorGridY();
