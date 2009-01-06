@@ -169,32 +169,30 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel implements Item
 	public int getVectorGridY() {
 		return vector_grid_y.getValue();
 	}
-	
+
 	public int getVectorType() {
 	    return vectorType;
 	}
 
 	public void itemStateChanged(ItemEvent e) {
-	    if (e.equals(HEDGEHOGS)) {
+		JComboBox source = (JComboBox)(e.getSource());
+	    if (source.getSelectedItem().equals(HEDGEHOGS)) {
 		vectorType = VT_HEDGEHOGS;
 	    }
-	    else if (e.equals(ARROW)) {
-		vectorType = VT_ARROW;
-	    }
-	    else if (e.equals(ARROWTAIL)) {
+	    else if (source.getSelectedItem().equals(ARROWTAIL)) {
 		vectorType = VT_ARROWTAIL;
 	    }
-	    else if (e.equals(ARROWTOP)) {
+	    else if (source.getSelectedItem().equals(ARROWTOP)) {
 		vectorType = VT_ARROWTOP;
 	    }
-	    else if (e.equals(PACMAN)) {
+	    else if (source.getSelectedItem().equals(PACMAN)) {
 		vectorType = VT_PACMAN;
 	    }
-	    else if (e.equals(PYRAMID)) {
+	    else if (source.getSelectedItem().equals(PYRAMID)) {
 		vectorType = VT_PYRAMID;
 	    }
 	}
-	
+
 	class VectorOptionSelectPanelListener implements ChangeListener {
 		public void stateChanged(ChangeEvent e) {
 			if (e.getSource() == vector_size) {
