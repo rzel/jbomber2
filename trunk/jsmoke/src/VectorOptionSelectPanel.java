@@ -12,21 +12,20 @@ import java.util.*;
 public class VectorOptionSelectPanel extends ColormapSelectPanel implements ItemListener{
 	public static final int VECTOR_FIELD_FORCE = 42;
 	public static final int VECTOR_FIELD_VELOCITY = 21;
-    
+
 	private static final String HEDGEHOGS = "1d: Hedgehogs";
 	private static final String ARROW     = "2d: Arrow";
 	private static final String ARROWTAIL = "2d: Arrow tail";
 	private static final String ARROWTOP  = "2d: Arrow top";
 	private static final String PACMAN    = "2d: Pacman";
-	private static final String PYRAMID   = "3d: Pyramid";	
-	
-	private static final int VT_HEDGEHOGS = 42;
-	private static final int VT_ARROW     = 84;
-	private static final int VT_ARROWTAIL = 126;
-	private static final int VT_ARROWTOP  = 168;
-	private static final int VT_PACMAN    = 210;
-	private static final int VT_PYRAMID   = 252;
-	
+	private static final String PYRAMID   = "3d: Pyramid";
+
+	public static final int VT_HEDGEHOGS = 0;
+	public static final int VT_ARROWTAIL = VT_HEDGEHOGS + 1;
+	public static final int VT_ARROWTOP  = VT_ARROWTAIL + 1;
+	public static final int VT_PACMAN    = VT_ARROWTOP  + 1;
+	public static final int VT_PYRAMID   = VT_PACMAN    + 1;
+
 	private JSlider vector_size;
 	private JLabel  vector_size_label;
 	private JSlider vector_scale_factor;
