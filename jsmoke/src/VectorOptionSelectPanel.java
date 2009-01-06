@@ -37,24 +37,24 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel implements Item
 	private JLabel  vector_grid_y_label;
 	private double  longest_vector;
 	private double  longest_vector_last;
-	
-	private JRadioButton forceButton = new JRadioButton("Force field (f)", true);
-	private JRadioButton velocityButton = new JRadioButton("Fluid velocity (v)", false);
-	
+
+	private JRadioButton forceButton = new JRadioButton("Force field (f)");
+	private JRadioButton velocityButton = new JRadioButton("Fluid velocity (v)");
+
 	private JComboBox shapeBox = new JComboBox();
-	
-	private int vectorType = VT_PACMAN;
-	
+
+	private int vectorType = VT_ARROWTOP;
+
 	public VectorOptionSelectPanel(int minColor, int maxColor, int colorCount, int colormap, JFrame frame) {
 		super(minColor, maxColor, colorCount, colormap, frame);
 
 		longest_vector = 0.0;
 		longest_vector_last = 1.0;
-		
+
 		JPanel optionPanel = new JPanel();
 		optionPanel.setBorder(new TitledBorder("Vector Options"));
 		optionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		vector_size         = new JSlider(1, 100, 24);
+		vector_size         = new JSlider(1, 100,  6);
 		vector_scale_factor = new JSlider(1, 1000, 500);
 		vector_grid_x       = new JSlider(1, 256, 25);
 		vector_grid_y       = new JSlider(1, 256, 25);
@@ -81,27 +81,30 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel implements Item
 		o[0] = new Color(255, 0, 20);
 		tablemodelcolors.addRow(o);
 		colortable.changeSelection(colortable.getSelectedRow(), 0, false, false);
-		colorCountSlider.setMinimum(colortable.getRowCount() - 1);	
+		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
 		generate_custom_gradient_cache();
 		/**************************
 		 ** END Default gradient **
 		 **************************/
 
 		shapeBox.addItem(HEDGEHOGS);
-		shapeBox.addItem(ARROW);
 		shapeBox.addItem(ARROWTAIL);
 		shapeBox.addItem(ARROWTOP);
 		shapeBox.addItem(PACMAN);
 		shapeBox.addItem(PYRAMID);
+		shapeBox.addItemListener(this);
 		optionPanel.add(new JLabel("Vector shape:"));
-		optionPanel.add(shapeBox);		
-		
-		ButtonGroup vectorGroup = new ButtonGroup();	
+		optionPanel.add(shapeBox);
+
+		shapeBox.setSelectedIndex(2);
+		velocityButton.setSelected(true);
+
+		ButtonGroup vectorGroup = new ButtonGroup();
 		vectorGroup.add(forceButton);
 		vectorGroup.add(velocityButton);
 		optionPanel.add(forceButton);
 		optionPanel.add(velocityButton);
-		
+
 		vector_size_label = new JLabel("Size [" + getVectorSize() + "]:");
 		optionPanel.add(vector_size_label);
 		optionPanel.add(vector_size);
@@ -132,7 +135,7 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel implements Item
 		return VECTOR_FIELD_VELOCITY;
 	    }
 	}
-	
+
 	public void update_longest_vector(double v) {
 		longest_vector = v > longest_vector ? v : longest_vector;
 	}
