@@ -460,7 +460,6 @@ class Smoke {
 
 		if (heightplotSelectPanel.isShadingEnabled()) {
 			gl.glEnable(gl.GL_LIGHTING);
-			heightplotSelectPanel.setSomethingChangedInTheLightingModel(false);
 			float[] fLightAmbient  = heightplotSelectPanel.getLightAmbientColor();
 			float[] fLightDiffuse  = heightplotSelectPanel.getLightDiffuseColor();
 			float[] fLightSpecular = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -1178,6 +1177,17 @@ class Smoke {
 			textures[TEXTURE_ARROW_1] = loadTexture(gl, "arrow-1.png");
 			textures[TEXTURE_ARROW_2] = loadTexture(gl, "arrow-2.png");
 			textures[TEXTURE_ARROW_3] = loadTexture(gl, "arrow-3.png");
+
+			gl.glShadeModel(gl.GL_SMOOTH); // needs param
+			float[] fLightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+			FloatBuffer LightColor = FloatBuffer.wrap(fLightColor);
+			gl.glEnable(gl.GL_LIGHT0);
+			gl.glEnable(gl.GL_LIGHTING);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightColor);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightColor);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR, LightColor);
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightColor);
+			gl.glDisable(gl.GL_LIGHTING);
 		}
 
 		public int loadTexture(GL gl, String fileName) {
