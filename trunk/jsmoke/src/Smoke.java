@@ -483,12 +483,10 @@ class Smoke {
 			}
 
 			gl.glEnable(gl.GL_LIGHT0);
-			gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightAmbient);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightDiffuse);
 			gl.glLightfv(gl.GL_LIGHT0, gl.GL_SPECULAR,  LightSpecular);
-	 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
-			gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition); // breaks everything somehow
+			gl.glLightfv(gl.GL_LIGHT0, gl.GL_POSITION, LightPosition);
 		}
 
 		gl.glTranslated(winWidth/2.0, 0.0, 0.0);
@@ -1127,6 +1125,7 @@ class Smoke {
 			gl.setSwapInterval(1); //Meh seems NOP in linux :(
 // 			gl.glBlendFunc(gl.GL_ONE, gl.GL_ONE_MINUS_SRC_ALPHA);
 			gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA);
+			gl.glHint(gl.GL_PERSPECTIVE_CORRECTION_HINT, gl.GL_NICEST);
 			gl.glEnable(gl.GL_DEPTH_TEST);
 			gl.glDepthFunc(gl.GL_LEQUAL);
 			gl.glDepthMask(true);
