@@ -81,7 +81,7 @@ public class VectorOptionSelectPanel extends ColormapSelectPanel implements Item
 		o[0] = new Color(255, 0, 20);
 		tablemodelcolors.addRow(o);
 		colortable.changeSelection(colortable.getSelectedRow(), 0, false, false);
-		colorCountSlider.setMinimum(colortable.getRowCount() - 1);
+		colorCountSlider.setMinimum(colortable.getRowCount() - 1);	
 		generate_custom_gradient_cache();
 		/**************************
 		 ** END Default gradient **
