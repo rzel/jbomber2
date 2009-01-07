@@ -52,7 +52,7 @@ class Smoke {
 	private static final int HISTORY_FX  = HISTORY_VY + 1;
 	private static final int HISTORY_FY  = HISTORY_FX + 1;
 	private static final int HISTORY_RHO = HISTORY_FY + 1;
-	private static final int HISTORY_DEPTH = 32; // several sec? (fps dep hum	urray)
+	private static final int HISTORY_DEPTH = 132; // several sec? (fps dep hum	urray)
 	double[][][] simulation_history = new double[HISTORY_DEPTH/*nr of steps back in time, eg 0 equals current time*/][6/*index, eg FX or RHO*/][];
 	/*rfftwnd_plan*/ Pointer plan_rc, plan_cr;  //simulation domain discretization
 
@@ -64,7 +64,7 @@ class Smoke {
 	boolean draw_smoke     = true;  //draw the smoke or not
 	boolean draw_vecs      = true;    //draw the vector field or not
 	boolean draw_iso_lines = false;    //draw the iso lines or not
-	boolean draw_stream_tubes = false; 
+	boolean draw_stream_tubes = false;
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
@@ -701,10 +701,6 @@ class Smoke {
 	}
 
 	double[] sampleVectorDataset(double x, double y, int depth) {
-// 		int dimx = (x*DIM);
-// 		int dimy = (y*DIM);
-// 		int ix = (int)dimx;
-// 		int iy = (int)(y*DIM);
 		int ix = (int)x;
 		int iy = (int)y;;
 		double a,b,c,d;
@@ -722,14 +718,9 @@ class Smoke {
 		d = simulation_history[depth][HISTORY_VY][getIdxFromXY(ix + 1, iy + 1)];
 		result[1] = (a*(1.0-frac_x)*(1.0-frac_y)) + (b*(frac_x)*(1.0-frac_y)) + (c*(1.0-frac_x)*(frac_y)) + (d*(frac_x)*(frac_y));
 
-// 		result[0]/=vectorOptionSelectPanel.get_longest_vector()/4.0;
-// 		result[1]/=vectorOptionSelectPanel.get_longest_vector()/4.0;
-
-		result = vector_normalize_2(result);
-
-// 		if(x-y < 0.01)
-// 		System.out.println((simulation_history[15][HISTORY_VY][DIM/2+DIM*(DIM/2)]-simulation_history[430][HISTORY_VY][DIM/2+DIM*(DIM/2)]));
-
+		result[0]/=vectorOptionSelectPanel.get_longest_vector()/10.0; // 10??
+		result[1]/=vectorOptionSelectPanel.get_longest_vector()/10.0;
+// 		result = vector_normalize_2(result);
 		return result;
 	}
 
@@ -759,34 +750,11 @@ class Smoke {
 		return new double[]{(a[1]*b[2] - a[2]*b[1]), (a[2]*b[0] - a[0]*b[2]), (a[0]*b[1] - a[1]*b[0])};
 	}
 
-// 	double[] vector_construct_rotate_3_matrix(double angle, double[] vec) {
-// 	}
-//
-// 	double[] vector_rotate_vector_3_matrix(double[] vec, double[] m) {
-// 	}
-
-	/* (Should) rotate a vector(vec) around an arbitrary vector(axis) by angle(in radians) */
+	/* Rotates a vector(vec) around an arbitrary vector(axis) by angle(in radians) */
 	double[] vector_rotate_vector_vector_3(double[] vec, double angle, double[] axis) {
-// // 		double x = vec[0], y = vec[1], z = vec[2], u = axis[0], v = axis[1], w = axis[2],
-// // 		       ux = u*x,
-// // 		       uy = u*y,
-// // 		       uz = u*z,
-// // 		       vx = v*x,
-// // 		       vy = v*y,
-// // 		       vz = v*z,
-// // 		       wx = w*x,
-// // 		       wy = w*y,
-// // 		       wz = w*z,
-// // 		       sa = Math.sin(angle),
-// // 		       ca = Math.cos(angle);
-// // 		x=u*(ux+vy+wz)+(x*(v*v+w*w)-u*(vy+wz))*ca+(-wy+vz)*sa;
-// // 		y=v*(ux+vy+wz)+(y*(u*u+w*w)-v*(ux+wz))*ca+(wx-uz)*sa;
-// // 		z=w*(ux+vy+wz)+(z*(u*u+v*v)-w*(ux+vy))*ca+(-vx+uy)*sa;
-// // 		return new double[]{x,y,z};
 		double x  = axis[0], y  = axis[1],  z = axis[2],
 		       sx =  vec[0], sy =  vec[1], sz =  vec[2],
 		       c  = Math.cos(angle), s = Math.sin(angle);
-// 		       c  = Math.cos(Math.toRadians(angle)), s = Math.sin(Math.toRadians(angle));
 		return new double[] {
 			(x*x+(1-x*x)*c)*sx + (x*y*(1-c)-z*s)*sy + (x*z*(1-c)+y*s)*sz,
 			(x*y*(1-c)+z*s)*sx + (y*y+(1-y*y)*c)*sy + (y*z*(1-c)-x*s)*sz,
@@ -796,14 +764,18 @@ class Smoke {
 
 	void trace_stream_tubes(GL gl, double zscale, double wn, double hn) {
 		gl.glEnable(gl.GL_LIGHTING);
-		float[] fLightColor = {0.0f, 1.0f, 0.0f, 1.0f};
+		float[] fLightColor = {1.0f, 1.0f, 1.0f, 1.0f};
 		FloatBuffer LightColor = FloatBuffer.wrap(fLightColor);
 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_AMBIENT,  LightColor);
 		gl.glLightfv(gl.GL_LIGHT0, gl.GL_DIFFUSE,  LightColor);
-		gl.glColor3d(0.0, 1.0, 0.0);
+		gl.glDisable(gl.GL_BLEND);
+		gl.glDisable(gl.GL_LIGHTING);
+		gl.glDisable(gl.GL_TEXTURE_1D);
+		gl.glDisable(gl.GL_TEXTURE_2D);
+		gl.glColor3d(1.0, 0.0, 0.0);
 
 		int n_streamlines = 16;
-		double[][][] streamlinevectors = new double[n_streamlines][HISTORY_DEPTH+1][2];
+		double[][][] streamlinevectors = new double[n_streamlines][HISTORY_DEPTH+1][4];
 
 		int hack_id = 0;
 		for(double iy = DIM/8.0; iy < DIM; iy+=DIM/4.0) {
@@ -812,13 +784,14 @@ class Smoke {
 				double z = 0;
 				double travelling_distance = .25;
 				gl.glBegin(gl.GL_LINES);
+				double[] vector = new double[2];
 				for(int depth = 0; depth < HISTORY_DEPTH; ++depth) {
-					double[] v = sampleVectorDataset(x,y,depth);
-					double[] vector = sampleVectorDataset(x,y,depth);//;normalize_vector(sampleVectorDataset(x,y,depth));
-// 					vector = normalize_vector(vector);
+					vector = sampleVectorDataset(x,y,depth);//;normalize_vector(sampleVectorDataset(x,y,depth));
 					gl.glVertex3d(wn + x*wn, hn + y*hn, z);
 					streamlinevectors[hack_id][depth][0] = wn + wn * x;
 					streamlinevectors[hack_id][depth][1] = hn + hn * y;
+					streamlinevectors[hack_id][depth][2] = -vector[0];
+					streamlinevectors[hack_id][depth][3] = -vector[1];
 					x = x - vector[0] * travelling_distance;
 					y = y - vector[1] * travelling_distance;
 					z = z + (zscale*0.1)/(HISTORY_DEPTH/32.0);
@@ -828,79 +801,63 @@ class Smoke {
 				}
 				streamlinevectors[hack_id][HISTORY_DEPTH][0] = wn + wn * x;
 				streamlinevectors[hack_id][HISTORY_DEPTH][1] = hn + hn * y;
+				streamlinevectors[hack_id][HISTORY_DEPTH][2] = -vector[0];
+				streamlinevectors[hack_id][HISTORY_DEPTH][3] = -vector[1];
 				gl.glEnd();
 				hack_id++;
 			}
 		}
-
-		gl.glDisable(gl.GL_BLEND);
-		gl.glDisable(gl.GL_LIGHTING);
-		gl.glDisable(gl.GL_TEXTURE_1D);
-		gl.glDisable(gl.GL_TEXTURE_2D);
-		gl.glColor3f(1.0f, 0.0f, 0.0f);
+		gl.glEnable(gl.GL_LIGHTING);
 		for(int streamline = 0 ; streamline < n_streamlines; ++ streamline) {
 			for(int depth=0; depth < HISTORY_DEPTH; depth++) {
-				double[] stream_vec_a = new double[]{streamlinevectors[streamline][depth  ][0], streamlinevectors[streamline][depth  ][1], (double)(depth*(zscale*0.1)/(HISTORY_DEPTH/32.0))};
-				double[] stream_vec_b = new double[]{streamlinevectors[streamline][depth+1][0], streamlinevectors[streamline][depth+1][1], (double)(depth*(zscale*0.1)/(HISTORY_DEPTH/32.0))};
-// 				double[] some_vec   = new double[]{streamlinevectors[streamline][depth][0], streamlinevectors[streamline][depth][1], 0.0};
-// 				double[] ortho_vec  = vector_normalize_3(vector_crossproduct_3(stream_vec, some_vec));
+				double[] stream_vec_a = new double[]{streamlinevectors[streamline][depth  ][2], streamlinevectors[streamline][depth  ][3], (double)((zscale*0.1)/(HISTORY_DEPTH/32.0))};
+				double[] stream_vec_b = new double[]{streamlinevectors[streamline][depth+1][2], streamlinevectors[streamline][depth+1][3], (double)((zscale*0.1)/(HISTORY_DEPTH/32.0))};
 				gl.glPushMatrix();
-				gl.glTranslated(stream_vec_a[0], stream_vec_a[1], (double)(depth*(zscale*0.1)/(HISTORY_DEPTH/32.0)));
-				stream_vec_a = new double[]{(stream_vec_a[0]-wn)/wn, (stream_vec_a[1]-hn)/hn, (zscale*0.1)/(HISTORY_DEPTH/32.0)};
-				stream_vec_b = new double[]{(stream_vec_b[0]-wn)/wn, (stream_vec_b[1]-hn)/hn, (zscale*0.1)/(HISTORY_DEPTH/32.0)};
+				gl.glTranslated(streamlinevectors[streamline][depth][0], streamlinevectors[streamline][depth][1], (double)(depth*(zscale*0.1)/(HISTORY_DEPTH/32.0)));
 				double glscaled = 10.0;
 				double hsize = ((zscale*0.1)/(HISTORY_DEPTH/32.0)) / glscaled;
 				gl.glScaled(glscaled,glscaled,glscaled);
+
+				double[] diff = new double[]{
+					(streamlinevectors[streamline][depth+1][0] - streamlinevectors[streamline][depth][0])/glscaled,
+					(streamlinevectors[streamline][depth+1][1] - streamlinevectors[streamline][depth][1])/glscaled
+				};
+
 				stream_vec_a = vector_normalize_3(stream_vec_a);
 				stream_vec_b = vector_normalize_3(stream_vec_b);
-// 				double angle_a = Math.acos(vector_dotproduct_3(new double[]{0.0, 0.0, 1.0}, stream_vec_a));
-// 				double angle_b = Math.acos(vector_dotproduct_3(new double[]{0.0, 0.0, 1.0}, stream_vec_b));
-// 				double[] point_a = {1.0, 0.0, 0.0};
-// 				double[] point_b = {1.0, 0.0, 0.0};
-// 				if(streamline==3 && depth==16) System.out.println("stream_a("+stream_vec_a[0]+","+stream_vec_a[1]+","+stream_vec_a[2]+") angle="+angle_a);
-// 				if(streamline==3 && depth==16) System.out.println("point_a("+point_a[0]+","+point_a[1]+","+point_a[2]+") angle="+angle_a);
-// 				point_a = vector_rotate_vector_vector_3(point_a, angle_a, new double[]{0.0, 1.0, 0.0});
-// 				point_b = vector_rotate_vector_vector_3(point_b, angle_b, new double[]{0.0, 1.0, 0.0});
-					double[] point_a = vector_crossproduct_3(new double[]{0.0, 0.0, 1.0}, stream_vec_a);
-					double[] point_b = vector_crossproduct_3(new double[]{0.0, 0.0, 1.0}, stream_vec_b);
-// 				if(streamline==3 && depth==16)
-// 				System.out.println("point_a("+point_a[0]+","+point_a[1]+","+point_a[2]+") angle="+angle_a);
-				int precision = 30;
-				float fa = 0.0f, gb=0.0f;
+
+				double[] point_a = vector_crossproduct_3(stream_vec_a, new double[]{0.0, 1.0, 0.0});
+				double[] point_b = vector_crossproduct_3(stream_vec_b, new double[]{0.0, 1.0, 0.0});
+
+// 				gl.glBegin(gl.GL_LINES);
+// 					gl.glColor3d(0.0,1.0,0.0);
+// 					gl.glVertex3d(0.0,0.0,0.0);
+// 					gl.glVertex3d(point_a[0],point_a[1],point_a[2]);
+// 					gl.glColor3d(0.0,1.0,1.0);
+// 					gl.glVertex3d(0.0,0.0,0.0);
+// 					gl.glVertex3d(0.0,1.0,0.0);
+// 				gl.glEnd();
+
+				int precision = 5;
+				float fa = 0.5f, gb=0.0f;
 				for(int i = 0; i < precision; ++i) {
 					gl.glColor3f(1.0f, fa, gb); fa += gb % 1.0; gb+= 0.66; while(fa>1.0) fa -= 1.0; while(gb>1.0) gb -= 1.0;
 					gl.glBegin(gl.GL_QUADS);
-					gl.glVertex3d(point_b[0], point_b[1], point_b[2] + hsize);
-					gl.glVertex3d(point_a[0], point_a[1], point_a[2]);
-// 					if((streamline==3) && (depth==16)) System.out.println("pre point_a("+point_a[0]+","+point_a[1]+","+point_a[2]+") angle="+angle_a);
+
+					gl.glNormal3d(point_b[0], point_b[1], point_b[2]);
+					gl.glVertex3d(diff[0] + point_b[0], diff[1] + point_b[1], point_b[2] + hsize);
+					gl.glNormal3d(point_a[0], point_a[1], point_a[2]);
+					gl.glVertex3d(          point_a[0],           point_a[1], point_a[2]        );
+
 					point_a = vector_rotate_vector_vector_3(point_a, Math.toRadians(360.0/precision), stream_vec_a);
 					point_b = vector_rotate_vector_vector_3(point_b, Math.toRadians(360.0/precision), stream_vec_b);
-// 					if((streamline==3) && (depth==16)) System.out.println("post point_a("+point_a[0]+","+point_a[1]+","+point_a[2]+") angle="+angle_a);
-					gl.glVertex3d(point_a[0], point_a[1], point_a[2]);
-					gl.glVertex3d(point_b[0], point_b[1], point_b[2] + hsize);
+
+					gl.glNormal3d(point_a[0], point_a[1], point_a[2]);
+					gl.glVertex3d(          point_a[0],           point_a[1], point_a[2]        );
+					gl.glNormal3d(point_b[0], point_b[1], point_b[2]);
+					gl.glVertex3d(diff[0] + point_b[0], diff[1] + point_b[1], point_b[2] + hsize);
 					gl.glEnd();
 				}
-// 				System.out.println("---");
-// // 				gl.glRotated(angle, 1.0, 0.0, 0.0);
-// // 				float fa = 0.0f, gb=0.0f;
-// // 				int precision = 5;
-// // 				double xdiff = (streamlinevectors[streamline][depth][0] - streamlinevectors[streamline][depth+1][0]) / glscaled;
-// // 				double ydiff = (streamlinevectors[streamline][depth][1] - streamlinevectors[streamline][depth+1][1]) / glscaled;
-// // 				double hsize = ((zscale*0.1)/(HISTORY_DEPTH/32.0)) / glscaled;
-// // 				for(int i = 0; i < precision; ++i) {
-// // 					gl.glColor3f(1.0f, fa, gb);
-// // 					fa += gb % 1.0; gb+= 0.66;
-// // 					gl.glPushMatrix();
-// // 					stream_vec = vector_normalize_3(stream_vec);
-// // 				//	gl.glRotated((360.0/precision) * i, 0.0, 0.0, 1.0);
-// // 					gl.glBegin(gl.GL_QUADS);
-// // 					gl.glVertex3d(1.0                                            , 0.0                                            , 0.0);
-// // 					gl.glVertex3d(1.0 * Math.cos(Math.toRadians(360.0/precision)), 1.0 * Math.sin(Math.toRadians(360.0/precision)), 0.0);
-// // 					gl.glVertex3d(xdiff + 1.0 * Math.cos(Math.toRadians(360.0/precision)), ydiff + 1.0 * Math.sin(Math.toRadians(360.0/precision)), hsize);
-// // 					gl.glVertex3d(xdiff + 1.0                                            , ydiff + 0.0                                            , hsize);
-// // 					gl.glEnd();
-// // 					gl.glPopMatrix();
-// // 				}
 				gl.glPopMatrix();
 			}
 		}
@@ -1180,7 +1137,7 @@ class Smoke {
 		streamTubeButton.setActionCommand("STREAM_TUBE_TOGGLE");
 		streamTubeButton.setSelected(false);
 		streamTubeButton.addActionListener(new SmokeSelectorListener());
-		
+
 		JPanel smokeSelectPanel = new JPanel();
 		smokeSelectPanel.setLayout(new GridLayout(3, 1));
 		smokeSelectPanel.setBorder(new TitledBorder("Visualizations"));
