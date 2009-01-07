@@ -64,6 +64,7 @@ class Smoke {
 	boolean draw_smoke     = true;  //draw the smoke or not
 	boolean draw_vecs      = true;    //draw the vector field or not
 	boolean draw_iso_lines = false;    //draw the iso lines or not
+	boolean draw_stream_tubes = false; 
 	static final int VECTOR_TYPE_HEDGEHOG = 0;
 	static final int VECTOR_TYPE_ARROW    = VECTOR_TYPE_HEDGEHOG + 1;
 	int vector_type = VECTOR_TYPE_ARROW;
@@ -671,7 +672,9 @@ class Smoke {
 			draw_vector_grid(gl, zscale, wn, hn);
 		}
 
-		trace_stream_tubes(gl, zscale, wn, hn);
+		if (draw_stream_tubes) {
+		    trace_stream_tubes(gl, zscale, wn, hn);
+		}
 
 		gl.glFlush(); // forces all opengl commands to complete. Blocking!!
 		++avg_fc;
@@ -1112,6 +1115,8 @@ class Smoke {
 				draw_vecs = !draw_vecs;
 			} else if (e.getActionCommand().equals("ISO_LINE_TOGGLE")) {
 				draw_iso_lines = !draw_iso_lines;
+			} else if (e.getActionCommand().equals("STREAM_TUBE_TOGGLE")) {
+				draw_stream_tubes = !draw_stream_tubes;
 			}else {
 				System.out.println("Smoke: " + e.getActionCommand());
 			}
@@ -1170,16 +1175,24 @@ class Smoke {
 		isoLineButton.setSelected(true);
 		isoLineButton.addActionListener(new SmokeSelectorListener());
 
+		JCheckBox streamTubeButton = new JCheckBox("Stream tubes");
+		streamTubeButton.setMnemonic(KeyEvent.VK_S);
+		streamTubeButton.setActionCommand("STREAM_TUBE_TOGGLE");
+		streamTubeButton.setSelected(false);
+		streamTubeButton.addActionListener(new SmokeSelectorListener());
+		
 		JPanel smokeSelectPanel = new JPanel();
 		smokeSelectPanel.setLayout(new GridLayout(3, 1));
 		smokeSelectPanel.setBorder(new TitledBorder("Visualizations"));
 		smokeSelectPanel.add(smokeButton);
 		smokeSelectPanel.add(vectorButton);
 		smokeSelectPanel.add(isoLineButton);
+		smokeSelectPanel.add(streamTubeButton);
 
 		smokeButton.setSelected(draw_smoke);
 		vectorButton.setSelected(draw_vecs);
 		isoLineButton.setSelected(draw_iso_lines);
+		streamTubeButton.setSelected(draw_stream_tubes);
 
 		smokeSelectPanel.setLayout(new BoxLayout(smokeSelectPanel, BoxLayout.Y_AXIS));
 		smokeSelectPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
