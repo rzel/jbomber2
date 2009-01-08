@@ -52,7 +52,7 @@ class Smoke {
 	private static final int HISTORY_FX  = HISTORY_VY + 1;
 	private static final int HISTORY_FY  = HISTORY_FX + 1;
 	private static final int HISTORY_RHO = HISTORY_FY + 1;
-	private static final int HISTORY_DEPTH = 132; // several sec? (fps dep hum	urray)
+	private static final int HISTORY_DEPTH = 96; // several sec? (fps dep hum	urray)
 	double[][][] simulation_history = new double[HISTORY_DEPTH/*nr of steps back in time, eg 0 equals current time*/][6/*index, eg FX or RHO*/][];
 	/*rfftwnd_plan*/ Pointer plan_rc, plan_cr;  //simulation domain discretization
 
@@ -796,8 +796,13 @@ class Smoke {
 					y = y - vector[1] * travelling_distance;
 					z = z + (zscale*0.1)/(HISTORY_DEPTH/32.0);
 					gl.glVertex3d(wn + x*wn, hn + y*hn, z);
-					if( (x<0) || (x>DIM) || (y<0) || (y>DIM))
+					if( (x<0) || (x>DIM) || (y<0) || (y>DIM)) {
+						streamlinevectors[hack_id][depth][0] = -1;
+						streamlinevectors[hack_id][depth][1] = -1;
+						streamlinevectors[hack_id][depth][2] = -1;
+						streamlinevectors[hack_id][depth][3] = -1;
 						break;
+					}
 				}
 				streamlinevectors[hack_id][HISTORY_DEPTH][0] = wn + wn * x;
 				streamlinevectors[hack_id][HISTORY_DEPTH][1] = hn + hn * y;
@@ -810,6 +815,14 @@ class Smoke {
 		gl.glEnable(gl.GL_LIGHTING);
 		for(int streamline = 0 ; streamline < n_streamlines; ++ streamline) {
 			for(int depth=0; depth < HISTORY_DEPTH; depth++) {
+				if(
+					(streamlinevectors[streamline][depth+1][0] == -1) &&
+					(streamlinevectors[streamline][depth+1][1] == -1) &&
+					(streamlinevectors[streamline][depth+1][2] == -1) &&
+					(streamlinevectors[streamline][depth+1][3] == -1)
+				) {
+					break;
+				}
 				double[] stream_vec_a = new double[]{streamlinevectors[streamline][depth  ][2], streamlinevectors[streamline][depth  ][3], (double)((zscale*0.1)/(HISTORY_DEPTH/32.0))};
 				double[] stream_vec_b = new double[]{streamlinevectors[streamline][depth+1][2], streamlinevectors[streamline][depth+1][3], (double)((zscale*0.1)/(HISTORY_DEPTH/32.0))};
 				gl.glPushMatrix();
